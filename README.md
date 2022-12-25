@@ -26,3 +26,14 @@ You can check out the [create-t3-app GitHub repository](https://github.com/t3-os
 ## How do I deploy this?
 
 Follow our deployment guides for [Vercel](https://create.t3.gg/en/deployment/vercel) and [Docker](https://create.t3.gg/en/deployment/docker) for more information.
+
+
+### Prisma setup workaround!
+Prisma migrate wasn't working... [Source](https://github.com/prisma/prisma/issues/16853#issuecomment-1364180940)
+
+* ran prisma migrate reset (successfully)
+* added SHADOW_DATABASE_URL in my .env file and set it to the same value as DATABASE_URL (link says url and shadowDatabaseUrl should not be the same values)
+* added shadowDatabaseUrl = env("SHADOW_DATABASE_URL") to my shema.prisma datasource db config
+* ran prisma generate (successfully)
+* ran prisma db push (successfully)
+* ran prisma migrate dev (successfully)

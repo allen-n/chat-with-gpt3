@@ -9,6 +9,10 @@
     "lint": "next lint",
     "start": "next start"
   },
+  "engineStrict": true,
+  "engines": {
+    "node": ">=19.0.0"
+  },
   "dependencies": {
     "@next-auth/prisma-adapter": "^1.0.5",
     "@prisma/client": "^4.5.0",
