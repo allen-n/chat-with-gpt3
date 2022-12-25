@@ -2,6 +2,7 @@ import { type NextPage } from "next";
 import Head from "next/head";
 import Link from "next/link";
 import { signIn, signOut, useSession } from "next-auth/react";
+import { Toaster } from "react-hot-toast";
 import { AudioInput } from "../components/AudioInput";
 
 import { trpc } from "../utils/trpc";
@@ -55,6 +56,7 @@ const Home: NextPage = () => {
             <AuthShowcase />
           </div>
         </div>
+        <Toaster />
       </main>
     </>
   );

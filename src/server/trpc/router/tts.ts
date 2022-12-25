@@ -1,8 +1,6 @@
 import { z } from "zod";
-import speech, { SpeechClient } from "@google-cloud/speech";
 
 import { router, protectedProcedure } from "../trpc";
-const client = new speech.SpeechClient();
 
 export const ttsRouter = router({
   speechToText: protectedProcedure
