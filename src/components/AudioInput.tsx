@@ -1,7 +1,11 @@
 import React, { useRef, useState } from "react";
 import toast from "react-hot-toast";
 
-import { speechToTextQuery } from "../utils/tts";
+import { getBaseUrl } from "../utils/trpc";
+import {
+  type SpeechToTextRequest,
+  type SpeechToTextResponse,
+} from "../pages/api/tts";
 
 export const AudioInput = (): JSX.Element => {
   const [isRecording, setIsRecording] = useState<boolean>(false);
@@ -11,11 +15,23 @@ export const AudioInput = (): JSX.Element => {
   const [stream, setStream] = useState<MediaStream | null>(null);
   const [audioChunks, setAudioChunks] = useState<Blob[]>([]);
   const [textToSpeechResponse, setTextToSpeechResponse] = useState<string>("");
+  const [currentBuffer, setCurrentBuffer] = useState<string | null>(null);
 
   const playerRef = useRef<HTMLAudioElement>(null);
 
   const recordingTimeSlice = 2000;
   const audioBitRate = 16000;
+
+  const blobToBase64 = (blob: Blob): Promise<string> => {
+    const reader = new FileReader();
+    reader.readAsDataURL(blob);
+    return new Promise((resolve) => {
+      reader.onloadend = () => {
+        const res = reader.result ? reader.result?.toString() : "";
+        resolve(res);
+      };
+    });
+  };
 
   const handleMicButtonClick = () => {
     if (isRecording) {
@@ -42,18 +58,21 @@ export const AudioInput = (): JSX.Element => {
           let chunks = audioChunks;
           chunks.push(e.data);
           console.log(`Pushed ${e.data.size} bytes of audio data.`);
+          const req: SpeechToTextRequest = {
+            file: e.data,
+            index: chunks.length - 1,
+          };
+
+          // fetch(getBaseUrl() + "/api/tts", {
+          //   method: "POST",
+          //   headers: {
+          //     "Content-Type": "audio/webm",
+          //   },
+          //   body: e.data,
+          // }).then((res) => {
+          //   console.log("res", res);
+          // });
           setAudioChunks(chunks);
-          // convert text to audio realtime
-          // speechToTextQuery(e.data)
-          //   .then((res) => {
-          //     setTextToSpeechResponse(textToSpeechResponse + " " + res.text);
-          //   })
-          //   .catch((err) => {
-          //     toast.error(
-          //       "Error while converting audio to text. Please try again in a sec!"
-          //     );
-          //     console.error(err);
-          //   });
         };
 
         mediaRecorder.onstop = (e) => {
@@ -61,17 +80,43 @@ export const AudioInput = (): JSX.Element => {
             type: "audio/ogg; codecs=opus",
           });
           // Convert audio to text after full audio
-          speechToTextQuery(blob)
-            .then((res) => {
+          // speechToTextQuery(blob)
+          //   .then((res) => {
+          //     console.log("res", res);
+          //     setTextToSpeechResponse(res.text);
+          //   })
+          //   .catch((err) => {
+          //     toast.error(
+          //       "Error while converting audio to text. Please try again in a sec!"
+          //     );
+          //     console.error(err);
+          //   });
+          const b64 = blobToBase64(blob).then((blobString) => {
+            // console.log("blobString", blobString);
+            const req = {
+              file: blobString,
+              index: 0,
+            };
+            fetch(getBaseUrl() + "/api/tts", {
+              method: "POST",
+              headers: {
+                "Content-Type": "application/json",
+              },
+              body: JSON.stringify(req),
+            }).then((res) => {
               console.log("res", res);
-              setTextToSpeechResponse(res.text);
-            })
-            .catch((err) => {
-              toast.error(
-                "Error while converting audio to text. Please try again in a sec!"
-              );
-              console.error(err);
             });
+          });
+
+          // fetch(getBaseUrl() + "/api/tts", {
+          //   method: "POST",
+          //   headers: {
+          //     "Content-Type": "application/json",
+          //   },
+          //   body: blob,
+          // }).then((res) => {
+          //   console.log("res", res);
+          // });
 
           var blobURL = window.URL.createObjectURL(blob);
           const size = audioChunks.reduce((acc, chunk) => acc + chunk.size, 0);
