@@ -5,10 +5,11 @@ type SpeechToTextQueryResp = {
 export const speechToTextQuery = async (
   file: Blob
 ): Promise<SpeechToTextQueryResp> => {
+  console.log("process.env.HUGGINGFACE_WRITE_KEY", process.env);
   const response = await fetch(
     "https://api-inference.huggingface.co/models/openai/whisper-tiny.en",
     {
-      //   headers: { Authorization: `Bearer ${process.env.HUGGINGFACE_WRITE_KEY}` },
+      headers: { Authorization: `Bearer ${process.env.HUGGINGFACE_WRITE_KEY}` },
       method: "POST",
       body: file,
     }

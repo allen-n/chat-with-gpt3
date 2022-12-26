@@ -14,7 +14,7 @@ export const AudioInput = (): JSX.Element => {
 
   const playerRef = useRef<HTMLAudioElement>(null);
 
-  const recordingTimeSlice = 1000;
+  const recordingTimeSlice = 2000;
   const audioBitRate = 16000;
 
   const handleMicButtonClick = () => {
@@ -43,12 +43,24 @@ export const AudioInput = (): JSX.Element => {
           chunks.push(e.data);
           console.log(`Pushed ${e.data.size} bytes of audio data.`);
           setAudioChunks(chunks);
+          // convert text to audio realtime
+          // speechToTextQuery(e.data)
+          //   .then((res) => {
+          //     setTextToSpeechResponse(textToSpeechResponse + " " + res.text);
+          //   })
+          //   .catch((err) => {
+          //     toast.error(
+          //       "Error while converting audio to text. Please try again in a sec!"
+          //     );
+          //     console.error(err);
+          //   });
         };
 
         mediaRecorder.onstop = (e) => {
           var blob = new Blob(audioChunks, {
             type: "audio/ogg; codecs=opus",
           });
+          // Convert audio to text after full audio
           speechToTextQuery(blob)
             .then((res) => {
               console.log("res", res);
@@ -98,7 +110,9 @@ export const AudioInput = (): JSX.Element => {
         </button>
       </div>
       <audio ref={playerRef} id="player" controls></audio>
-      <p>{textToSpeechResponse}</p>
+      <div className="justify-center p-5 text-center align-middle text-xl text-white">
+        <p>{textToSpeechResponse}</p>
+      </div>
     </div>
   );
 };
