@@ -17,13 +17,6 @@ const restricted = async (req: NextApiRequest, res: NextApiResponse) => {
   const session = await getServerAuthSession({ req, res });
 
   if (session) {
-    // const { file, index } = req.body as SpeechToTextRequest;
-    // const boundary = req.headers["content-type"]?.split(";")[1];
-    // const boundary = getBoundary(req.headers["content-type"] || "");
-    // const parts = parse(req.body, boundary);
-    // console.log("parts", parts);
-    // const result = await speechToTextQuery(file);
-    // res.send({ text: "OK" });
     const base64data = req.body.file;
     const buff = Buffer.from(
       base64data.replace("data:audio/ogg; codecs=opus;base64,", ""),
@@ -32,24 +25,22 @@ const restricted = async (req: NextApiRequest, res: NextApiResponse) => {
     const blob = new Blob([buff], {
       type: "audio/ogg; codecs=opus",
     });
-    console.log("body", blob);
-    // console.log("req", req);
+    const index = 0;
+
     const result = await speechToTextQuery(blob);
     console.log(result);
-    const index = 1;
-    res.send({ text: "OK" });
 
-    //   if (typeof result.error === "undefined") {
-    //     const speechToTextResponse: SpeechToTextResponse = {
-    //       text: result.text,
-    //       index: index,
-    //     };
-    //     res.send(speechToTextResponse);
-    //   } else {
-    //     res.send({
-    //       error: `Error generating speech to text for file ${index} due to error: ${result.error} `,
-    //     });
-    //   }
+    if (typeof result.error === "undefined") {
+      const speechToTextResponse: SpeechToTextResponse = {
+        text: result.text,
+        index: index,
+      };
+      res.send(speechToTextResponse);
+    } else {
+      res.send({
+        error: `Error generating speech to text for file ${index} due to error: ${result.error} `,
+      });
+    }
   } else {
     res.send({
       error:

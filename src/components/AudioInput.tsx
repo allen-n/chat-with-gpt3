@@ -6,6 +6,7 @@ import {
   type SpeechToTextRequest,
   type SpeechToTextResponse,
 } from "../pages/api/tts";
+import { SpeechToTextQueryResp } from "../utils/tts";
 
 export const AudioInput = (): JSX.Element => {
   const [isRecording, setIsRecording] = useState<boolean>(false);
@@ -62,6 +63,9 @@ export const AudioInput = (): JSX.Element => {
             file: e.data,
             index: chunks.length - 1,
           };
+          e.data.arrayBuffer().then((buffer) => {
+            console.log("buffer", buffer);
+          });
 
           // fetch(getBaseUrl() + "/api/tts", {
           //   method: "POST",
@@ -79,18 +83,6 @@ export const AudioInput = (): JSX.Element => {
           var blob = new Blob(audioChunks, {
             type: "audio/ogg; codecs=opus",
           });
-          // Convert audio to text after full audio
-          // speechToTextQuery(blob)
-          //   .then((res) => {
-          //     console.log("res", res);
-          //     setTextToSpeechResponse(res.text);
-          //   })
-          //   .catch((err) => {
-          //     toast.error(
-          //       "Error while converting audio to text. Please try again in a sec!"
-          //     );
-          //     console.error(err);
-          //   });
           const b64 = blobToBase64(blob).then((blobString) => {
             // console.log("blobString", blobString);
             const req = {
@@ -104,19 +96,9 @@ export const AudioInput = (): JSX.Element => {
               },
               body: JSON.stringify(req),
             }).then((res) => {
-              console.log("res", res);
+              res.json().then((resJSON) => console.log("resJson", resJSON));
             });
           });
-
-          // fetch(getBaseUrl() + "/api/tts", {
-          //   method: "POST",
-          //   headers: {
-          //     "Content-Type": "application/json",
-          //   },
-          //   body: blob,
-          // }).then((res) => {
-          //   console.log("res", res);
-          // });
 
           var blobURL = window.URL.createObjectURL(blob);
           const size = audioChunks.reduce((acc, chunk) => acc + chunk.size, 0);
