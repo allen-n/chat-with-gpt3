@@ -1,11 +1,12 @@
-type SpeechToTextQueryResp = {
+// TODO allen Maybe this should be in a types file somehwere?
+export type SpeechToTextQueryResp = {
   text: string;
+  error?: string;
 };
 
 export const speechToTextQuery = async (
   file: Blob
 ): Promise<SpeechToTextQueryResp> => {
-  console.log("process.env.HUGGINGFACE_WRITE_KEY", process.env);
   const response = await fetch(
     "https://api-inference.huggingface.co/models/openai/whisper-tiny.en",
     {
