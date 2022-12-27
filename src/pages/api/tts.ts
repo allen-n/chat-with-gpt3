@@ -5,21 +5,75 @@ import { speechToTextQuery, type SpeechToTextModelResp } from "../../utils/tts";
 import { base64ToBlob } from "../../utils/encoding";
 
 import { Configuration, OpenAIApi } from "openai";
+
 import * as textToSpeech from "@google-cloud/text-to-speech";
+import { GoogleAuth, JWT } from "google-auth-library";
 
 const configuration = new Configuration({
   apiKey: process.env.OPENAI_SK,
 });
 const openai = new OpenAIApi(configuration);
-const ttsClient = new textToSpeech.TextToSpeechClient();
 
-const generateSpeech = async (text: string) => {
+const googleKeys = JSON.parse(process.env.GOOGLE_JWT_CREDS || "");
+
+const ttsClient: textToSpeech.TextToSpeechClient =
+  new textToSpeech.TextToSpeechClient({
+    credentials: {
+      client_email: googleKeys.client_email,
+      private_key: googleKeys.private_key,
+    },
+  });
+
+const doGoogleAuth = async (): Promise<JWT | null> => {
+  const googleKeys = JSON.parse(process.env.GOOGLE_JWT_CREDS || "");
+
+  // // load the JWT or UserRefreshClient from the keys
+  // const client = new JWT({
+  //   email: googleKeys.client_email,
+  //   key: googleKeys.private_key,
+  //   scopes: ["https://www.googleapis.com/auth/cloud-platform"],
+  // });
+  // const url = `https://dns.googleapis.com/dns/v1/projects/${googleKeys.project_id}`;
+  // const res = await client.request({ url });
+  // console.log("Google Auth Result:", res.data);
+
+  ttsClient = new textToSpeech.TextToSpeechClient({
+    credentials: {
+      client_email: googleKeys.client_email,
+      private_key: googleKeys.private_key,
+    },
+  });
+  return null;
+  // if (res.data && res.data.hasOwnProperty("error")) {
+  //   return null;
+  // } else {
+  //   return client;
+  // }
+};
+
+// TODO allen figure out how to use this
+// const client = await doGoogleAuth();
+// if (client) {
+//   ttsClient.auth = client;
+// }
+
+// TODO allen: https://cloud.google.com/nodejs/docs/reference/google-auth-library/latest
+const generateSpeech = async (
+  text: string,
+  ttsClient: textToSpeech.TextToSpeechClient | null
+) => {
   // Construct the request
+  if (!ttsClient) throw new Error("ttsClient not initialized!");
 
   const request = {
     input: { text: text },
     // Select the language and SSML voice gender (optional)
-    voice: { languageCode: "en-US", ssmlGender: "NEUTRAL" },
+    voice: {
+      languageCode: "en-US",
+      ssmlGender: "NEUTRAL",
+      name: "en-US-Standard-B", // Wavenet voices cost 4x as much
+      speed: 1.25,
+    },
     // select the type of audio encoding
     audioConfig: { audioEncoding: "OGG_OPUS" },
   };
@@ -85,7 +139,22 @@ const restricted = async (req: NextApiRequest, res: NextApiResponse) => {
     }
     res.send(resp);
   } else {
-    generateSpeech("A test");
+    doGoogleAuth().then((res) => {
+      generateSpeech(txt, ttsClient).catch((err) => {
+        console.error("speech gen error", err);
+      });
+    });
+    const txt = "A test of speech to text";
+    generateSpeech(txt, ttsClient).catch((err) => {
+      console.error("speech gen error", err);
+      // doGoogleAuth()
+      //   .catch((err) => {
+      //     console.error("auth error", err);
+      //   })
+      //   .then((res) => {
+      //     if (res) generateSpeech(txt);
+      //   });
+    });
     res.send({
       error:
         "You must be signed in to view the protected content on this page.",
