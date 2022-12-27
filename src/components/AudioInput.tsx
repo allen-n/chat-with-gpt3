@@ -6,7 +6,7 @@ import {
   type SpeechToTextRequest,
   type SpeechToTextResponse,
 } from "../pages/api/tts";
-import { blobToBase64 } from "../utils/encoding";
+import { blobToBase64, base64ToBlob } from "../utils/encoding";
 
 export const AudioInput = (): JSX.Element => {
   const [isRecording, setIsRecording] = useState<boolean>(false);
@@ -73,16 +73,29 @@ export const AudioInput = (): JSX.Element => {
               .then((res) => {
                 res.json().then((resJSON) => {
                   const resp = resJSON as SpeechToTextResponse;
-                  if (typeof resp.modelResp.error !== "undefined") {
+                  if (typeof resp.textModelResp.error !== "undefined") {
                     toast.error(
-                      `Sorry, ${resp.modelResp.error}. Give us ~${
-                        resp.modelResp.estimated_time || "a few "
+                      `Sorry, ${resp.textModelResp.error}. Give us ~${
+                        resp.textModelResp.estimated_time || "a few "
                       }s to fix it.`
                     );
                   } else {
                     toast.success("Success!");
-                    console.log("Response text: ", resp.modelResp.text);
-                    setTextToSpeechResponse(resp.modelResp.text);
+                    console.log("Response: ", resp);
+                    const buff = resp.speechModelResp;
+                    if (typeof buff !== "undefined") {
+                      const blob = base64ToBlob(buff);
+                      var blobURL = window.URL.createObjectURL(blob);
+                      if (playerRef.current) {
+                        playerRef.current.src = blobURL;
+                      } else {
+                        console.error("No audio player ref. :(");
+                      }
+                    } else {
+                      console.error("No speech model response. :(");
+                    }
+
+                    setTextToSpeechResponse(resp.textModelResp.text);
                   }
                 });
               })
@@ -91,11 +104,11 @@ export const AudioInput = (): JSX.Element => {
               });
           });
 
-          var blobURL = window.URL.createObjectURL(blob);
+          // var blobURL = window.URL.createObjectURL(blob);
+          // if (playerRef.current) playerRef.current.src = blobURL;
           const size = audioChunks.reduce((acc, chunk) => acc + chunk.size, 0);
           console.log(`Audio size: ${size / 1000}kb`);
           setAudioChunks([]);
-          if (playerRef.current) playerRef.current.src = blobURL;
         };
 
         mediaRecorder.start(recordingTimeSlice);

@@ -15,6 +15,15 @@ export const blobToBase64 = (blob: Blob): Promise<string> => {
 };
 
 /**
+ * Convert a buffer to a base64 string
+ * @param buff
+ * @returns
+ */
+export const buffToBase64 = (buff: Buffer): string => {
+  return buff.toString("base64");
+};
+
+/**
  * Convert base64 encoded string to a blob
  * @param base64data
  * @param contentType
