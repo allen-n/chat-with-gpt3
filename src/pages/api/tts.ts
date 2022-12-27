@@ -34,7 +34,7 @@ const generateSpeech = async (
     voice: {
       languageCode: "en-US",
       ssmlGender: "NEUTRAL",
-      name: "en-US-Standard-B", // Wavenet voices cost 4x as much
+      name: "en-US-Standard-I", // Wavenet voices cost 4x as much
       speed: 1.25,
     },
     // select the type of audio encoding
@@ -48,7 +48,7 @@ const CompletionRequest = async (prompt: string) => {
   // TODO allen: will need to prompt engineer a bit to keep context of the conversation
   try {
     const completion = await openai.createCompletion({
-      model: "text-curie-001", // "text-davinci-003", more performant but 10x the price
+      model: "text-curie-001", // "text-davinci-003", higher quality, lower speed, but 10x the price, text-curie-001 is cheaper and faster
       prompt: `The following is a conversation with an AI assistant. The assistant is helpful, creative, clever, and very friendly.\n\nHuman: ${prompt}?\nAI: `,
       temperature: 0.9,
       max_tokens: 150,
@@ -75,17 +75,17 @@ export type SpeechToTextResponse = {
   llmTextResp?: string;
   speechModelResp?: string;
   index: number;
+  error?: string;
 };
 
 const restricted = async (req: NextApiRequest, res: NextApiResponse) => {
   const session = await getServerAuthSession({ req, res });
 
   if (session) {
+    console.log("session", session);
     const { b64FileString, index } = req.body as SpeechToTextRequest;
     const blob = base64ToBlob(b64FileString);
-
     const result = await speechToTextQuery(blob);
-    // console.log(result);
 
     const resp: SpeechToTextResponse = {
       textModelResp: result,
@@ -113,8 +113,7 @@ const restricted = async (req: NextApiRequest, res: NextApiResponse) => {
       })
       .then((audioContent) => {});
     res.send({
-      error:
-        "You must be signed in to view the protected content on this page.",
+      error: "Sorry - you have to be signed in to use this functionality!",
     });
   }
 };

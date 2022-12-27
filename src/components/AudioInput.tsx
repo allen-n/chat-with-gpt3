@@ -73,7 +73,10 @@ export const AudioInput = (): JSX.Element => {
               .then((res) => {
                 res.json().then((resJSON) => {
                   const resp = resJSON as SpeechToTextResponse;
-                  if (typeof resp.textModelResp.error !== "undefined") {
+                  if (typeof resp.error !== "undefined") {
+                    toast.error(resp.error);
+                    console.log("Missing resp.textModelResp", resp);
+                  } else if (typeof resp.textModelResp.error !== "undefined") {
                     toast.error(
                       `Sorry, ${resp.textModelResp.error}. Give us ~${
                         resp.textModelResp.estimated_time || "a few "

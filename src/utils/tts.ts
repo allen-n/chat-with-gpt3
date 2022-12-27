@@ -5,6 +5,11 @@ export type SpeechToTextModelResp = {
   estimated_time?: number;
 };
 
+/**
+ *
+ * @param file a blob file encoding audio (ideally `audio/ogg; codecs=opus`)
+ * @returns
+ */
 export const speechToTextQuery = async (
   file: Blob
 ): Promise<SpeechToTextModelResp> => {
