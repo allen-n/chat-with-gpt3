@@ -4,14 +4,30 @@ import { getServerAuthSession } from "../../server/common/get-server-auth-sessio
 import { speechToTextQuery, type SpeechToTextModelResp } from "../../utils/tts";
 import { base64ToBlob } from "../../utils/encoding";
 
-import { Configuration, OpenAIApi, CreateCompletionResponse } from "openai";
+import { Configuration, OpenAIApi } from "openai";
+import * as textToSpeech from "@google-cloud/text-to-speech";
+
+const configuration = new Configuration({
+  apiKey: process.env.OPENAI_SK,
+});
+const openai = new OpenAIApi(configuration);
+const ttsClient = new textToSpeech.TextToSpeechClient();
+
+const generateSpeech = async (text: string) => {
+  // Construct the request
+
+  const request = {
+    input: { text: text },
+    // Select the language and SSML voice gender (optional)
+    voice: { languageCode: "en-US", ssmlGender: "NEUTRAL" },
+    // select the type of audio encoding
+    audioConfig: { audioEncoding: "OGG_OPUS" },
+  };
+  const [response] = await ttsClient.synthesizeSpeech(request);
+  console.log(response);
+};
 
 const CompletionRequest = async (prompt: string) => {
-  const configuration = new Configuration({
-    apiKey: process.env.OPENAI_SK,
-  });
-  const openai = new OpenAIApi(configuration);
-
   // TODO allen: will need to prompt engineer a bit to keep context of the conversation
   try {
     const completion = await openai.createCompletion({
@@ -69,6 +85,7 @@ const restricted = async (req: NextApiRequest, res: NextApiResponse) => {
     }
     res.send(resp);
   } else {
+    generateSpeech("A test");
     res.send({
       error:
         "You must be signed in to view the protected content on this page.",
