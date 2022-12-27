@@ -56,7 +56,7 @@ const Home: NextPage = () => {
             <AuthShowcase />
           </div>
         </div>
-        <Toaster />
+        <Toaster position="bottom-left" />
       </main>
     </>
   );
