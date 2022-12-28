@@ -40,6 +40,9 @@ const generateSpeech = async (
     // select the type of audio encoding
     audioConfig: { audioEncoding: "OGG_OPUS" },
   };
+
+  // The type here is a bit weird, but it's correct
+  //@ts-ignore
   const [response] = await ttsClient.synthesizeSpeech(request);
   return response.audioContent as Buffer;
 };
