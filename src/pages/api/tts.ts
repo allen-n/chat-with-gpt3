@@ -82,7 +82,6 @@ const restricted = async (req: NextApiRequest, res: NextApiResponse) => {
   const session = await getServerAuthSession({ req, res });
 
   if (session) {
-    console.log("session", session);
     const { b64FileString, index } = req.body as SpeechToTextRequest;
     const blob = base64ToBlob(b64FileString);
     const result = await speechToTextQuery(blob);
@@ -100,7 +99,6 @@ const restricted = async (req: NextApiRequest, res: NextApiResponse) => {
 
       console.log("completion choice", choice);
       const audioContent = await generateSpeech(choice, ttsClient);
-      console.log("aduio content", audioContent);
       resp.speechModelResp = buffToBase64(audioContent);
       resp.llmTextResp = choice;
     }

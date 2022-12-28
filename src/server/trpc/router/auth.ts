@@ -6,7 +6,7 @@ export const authRouter = router({
     return ctx.session;
   }),
   getSecretMessage: protectedProcedure.query(() => {
-    return "you can now see this secret message!";
+    return "🔒";
   }),
   checkPassword: publicProcedure
     .input(z.object({ text: z.string().nullish() }).nullish())

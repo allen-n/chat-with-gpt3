@@ -32,6 +32,10 @@ export const AudioInput = (): JSX.Element => {
     }
   };
 
+  const handleClearButtonClick = () => {
+    setTextToSpeechResponse("");
+  };
+
   const record = () => {
     navigator.mediaDevices
       .getUserMedia({ audio: true, video: false })
@@ -46,11 +50,12 @@ export const AudioInput = (): JSX.Element => {
         mediaRecorder.ondataavailable = (e) => {
           let chunks = audioChunks;
           chunks.push(e.data);
-          console.log(`Pushed ${e.data.size} bytes of audio data.`);
+          console.debug(`Pushed ${e.data.size} bytes of audio data.`);
 
-          e.data.arrayBuffer().then((buffer) => {
-            console.log("buffer", buffer); // TODO allen: check the buffers to decide when  to send transcription requests
-          });
+          // // TODO allen: check the buffers to decide when  to send transcription requests
+          // e.data.arrayBuffer().then((buffer) => {
+          //   console.log("buffer", buffer);
+          // });
           setAudioChunks(chunks);
         };
 
@@ -84,7 +89,6 @@ export const AudioInput = (): JSX.Element => {
                     );
                   } else {
                     toast.success("Success!");
-                    console.log("Response: ", resp);
                     const buff = resp.speechModelResp;
                     if (typeof buff !== "undefined") {
                       const blob = base64ToBlob(buff);
@@ -129,24 +133,42 @@ export const AudioInput = (): JSX.Element => {
       console.error(error);
     }
   };
+  const btnStyle = `rounded-full mx-1 bg-white/10 px-10 py-3 font-semibold text-${
+    isRecording ? "red-300" : "white"
+  } no-underline transition hover:bg-white/20`;
+
+  const audioPlayerStyle = `my-2 h-10 w-[100%] ${
+    textToSpeechResponse ? "" : "hidden"
+  }`;
 
   return (
-    <div>
-      <div
-        id="recodingBtn"
-        className="w-fit-content m-4 flex h-12 cursor-pointer rounded-full border-0 border-red-100 bg-gray-200 p-2 align-middle transition duration-700 ease-in-out active:border-4 active:border-red-400"
-      >
-        <button
-          className="bg-gray flex border border-solid text-red-500"
-          onClick={handleMicButtonClick}
-        >
+    <div className="items-left flex flex-col justify-center">
+      <div id="recodingBtn" className="py-1 text-center">
+        <div className="hidden text-red-300" />
+        <button className={btnStyle} onClick={handleMicButtonClick}>
           Record
         </button>
+        {textToSpeechResponse && (
+          <button className={btnStyle} onClick={handleClearButtonClick}>
+            Clear
+          </button>
+        )}
       </div>
-      <audio ref={playerRef} id="player" controls></audio>
-      <div className="justify-center p-5 text-center align-middle text-xl text-white">
-        <p>{textToSpeechResponse}</p>
+
+      <div className="my-2 text-xl">
+        <p className="pb-2">{textToSpeechResponse && "You Asked:"}</p>
+        <p className="pb-5">{textToSpeechResponse}</p>
+        <p className="pb-2">
+          {textToSpeechResponse && "And GPT3 Said ... 👇 "}
+        </p>
       </div>
+      <div className="hidden"></div>
+      <audio
+        ref={playerRef}
+        id="player"
+        controls
+        className={audioPlayerStyle}
+      ></audio>
     </div>
   );
 };
