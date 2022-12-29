@@ -37,12 +37,20 @@ const Home: NextPage = () => {
           </div>
         </div>
         <div className="flex flex-col items-center">
-          <input
-            className="my-2 w-72 border p-2"
-            type="password"
-            placeholder="Password Please 🙏"
-            ref={inputRef}
-          />
+          <form
+            action="none"
+            onSubmit={(e) => {
+              e.preventDefault();
+              setPassword(stringhash(inputRef.current?.value || "").toString());
+            }}
+          >
+            <input
+              className="my-2 w-72 border p-2"
+              type="password"
+              placeholder="Password Please 🙏"
+              ref={inputRef}
+            />
+          </form>
         </div>
         <div className="my-2 flex justify-center">
           <button
@@ -69,7 +77,9 @@ const Home: NextPage = () => {
         <link rel="icon" href="/favicon.ico" />
         <Script src="https://rsms.me/inter/inter.css" />
       </Head>
-      <main className="flex min-h-screen flex-col items-center justify-center bg-gradient-to-b from-[#2e026d] to-[#15162c]">
+      <main className="flex min-h-screen flex-col items-center justify-center overflow-y-hidden bg-gradient-to-b from-[#2e026d] to-[#15162c]">
+        {/* TODO allen fixme before pushing to prod */}
+        <HomeScreen />
         {!passwordSuccess.data?.passwordValid && <PasswordInput />}
         {passwordSuccess.data?.passwordValid && <HomeScreen />}
         <Toaster position="bottom-left" />

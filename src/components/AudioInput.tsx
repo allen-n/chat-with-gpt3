@@ -1,4 +1,9 @@
-import React, { useRef, useState } from "react";
+import React, { useRef, useState, useEffect } from "react";
+import {
+  ConversationContainer,
+  type ConversationContainerProps,
+} from "./ConversationContainer";
+import { ConversationRowProps } from "./ConversationRow";
 import toast from "react-hot-toast";
 
 import { getBaseUrl } from "../utils/trpc";
@@ -9,13 +14,62 @@ import {
 import { blobToBase64, base64ToBlob } from "../utils/encoding";
 
 export const AudioInput = (): JSX.Element => {
+  // Media state hooks
   const [isRecording, setIsRecording] = useState<boolean>(false);
   const [mediaRecorder, setMediaRecorder] = useState<MediaRecorder | null>(
     null
   );
   const [stream, setStream] = useState<MediaStream | null>(null);
   const [audioChunks, setAudioChunks] = useState<Blob[]>([]);
+
+  // API Call state hooks
   const [textToSpeechResponse, setTextToSpeechResponse] = useState<string>("");
+  const [fullResponse, setFullResponse] = useState<SpeechToTextResponse>();
+
+  // UI State Hooks
+  const [conversationRows, setConversationRows] =
+    useState<ConversationContainerProps>();
+  const [currentConversationRow, setCurrentConversationRow] =
+    useState<ConversationRowProps>();
+
+  // UI Effect hooks
+
+  useEffect(() => {
+    if (fullResponse) {
+      const convoRow: ConversationRowProps = {
+        incomingUserText:
+          fullResponse?.textModelResp.text || "Houston, we had a problem",
+        incomingBotText:
+          fullResponse?.llmTextResp || "Houston, we had a problem",
+        incomingUserTextComplete: true,
+      };
+      if (conversationRows) {
+        let rows = conversationRows.conversationRows;
+        rows.push(convoRow);
+        setConversationRows(conversationRows);
+      } else {
+        let rows: ConversationContainerProps = { conversationRows: [convoRow] };
+        setConversationRows(rows);
+      }
+      setTextToSpeechResponse("");
+    }
+  }, [fullResponse]);
+
+  useEffect(() => {
+    if (isRecording) {
+      const convoRow: ConversationRowProps = {
+        incomingUserTextComplete: false,
+      };
+      if (conversationRows) {
+        let rows = conversationRows.conversationRows;
+        rows.push(convoRow);
+        setConversationRows(conversationRows);
+      } else {
+        let rows: ConversationContainerProps = { conversationRows: [convoRow] };
+        setConversationRows(rows);
+      }
+    }
+  }, [isRecording]);
 
   const playerRef = useRef<HTMLAudioElement>(null);
 
@@ -33,7 +87,7 @@ export const AudioInput = (): JSX.Element => {
   };
 
   const handleClearButtonClick = () => {
-    setTextToSpeechResponse("");
+    setFullResponse(null);
   };
 
   const record = () => {
@@ -89,6 +143,7 @@ export const AudioInput = (): JSX.Element => {
                     );
                   } else {
                     toast.success("Success!");
+
                     const buff = resp.speechModelResp;
                     if (typeof buff !== "undefined") {
                       const blob = base64ToBlob(buff);
@@ -101,8 +156,8 @@ export const AudioInput = (): JSX.Element => {
                     } else {
                       console.error("No speech model response. :(");
                     }
-
                     setTextToSpeechResponse(resp.textModelResp.text);
+                    setFullResponse(resp);
                   }
                 });
               })
@@ -133,42 +188,47 @@ export const AudioInput = (): JSX.Element => {
       console.error(error);
     }
   };
-  const btnStyle = `rounded-full mx-1 bg-white/10 px-10 py-3 font-semibold text-${
+
+  const btnStyle = `hover:animate-bottom-bounce rounded-full mx-1 bg-white/10 px-10 py-3 font-semibold text-${
     isRecording ? "red-300" : "white"
   } no-underline transition hover:bg-white/20`;
 
-  const audioPlayerStyle = `my-2 h-10 w-[100%] ${
-    textToSpeechResponse ? "" : "hidden"
+  const audioPlayerStyle = `my-2 h-10 w-full ${
+    textToSpeechResponse ? "" : "hidden" //todo fixme allen
   }`;
 
   return (
-    <div className="items-left flex flex-col justify-center">
-      <div id="recodingBtn" className="py-1 text-center">
-        <div className="hidden text-red-300" />
-        <button className={btnStyle} onClick={handleMicButtonClick}>
-          Record
-        </button>
-        {textToSpeechResponse && (
-          <button className={btnStyle} onClick={handleClearButtonClick}>
-            Clear
+    <>
+      {conversationRows && (
+        <div>
+          {<ConversationContainer {...conversationRows} />}
+          <div className="px-4">
+            <div className="hidden"></div>
+            <audio
+              ref={playerRef}
+              id="player"
+              controls
+              className={audioPlayerStyle}
+            ></audio>
+          </div>
+        </div>
+      )}
+      <div className="items-left flex w-full flex-col justify-center p-4">
+        <div id="recodingBtn" className="py-1 text-center">
+          <div className="hidden text-red-300" />
+          <button className={btnStyle} onClick={handleMicButtonClick}>
+            Record
           </button>
-        )}
+          {textToSpeechResponse && (
+            <button
+              className="mx-1 rounded-full bg-white/10 px-10 py-3 font-semibold text-white hover:animate-bottom-bounce"
+              onClick={handleClearButtonClick}
+            >
+              Clear
+            </button>
+          )}
+        </div>
       </div>
-
-      <div className="my-2 text-xl">
-        <p className="pb-2">{textToSpeechResponse && "You Asked:"}</p>
-        <p className="pb-5">{textToSpeechResponse}</p>
-        <p className="pb-2">
-          {textToSpeechResponse && "And GPT3 Said ... 👇 "}
-        </p>
-      </div>
-      <div className="hidden"></div>
-      <audio
-        ref={playerRef}
-        id="player"
-        controls
-        className={audioPlayerStyle}
-      ></audio>
-    </div>
+    </>
   );
 };

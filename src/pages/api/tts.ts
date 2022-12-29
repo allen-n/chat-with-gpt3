@@ -1,11 +1,14 @@
 import { type NextApiRequest, type NextApiResponse } from "next";
 
 import { getServerAuthSession } from "../../server/common/get-server-auth-session";
-import { speechToTextQuery, type SpeechToTextModelResp } from "../../utils/tts";
+import {
+  speechToTextQuery,
+  activateSpeechToText,
+  type SpeechToTextModelResp,
+} from "../../utils/tts";
 import { base64ToBlob, buffToBase64 } from "../../utils/encoding";
 
 import { Configuration, OpenAIApi } from "openai";
-
 import * as textToSpeech from "@google-cloud/text-to-speech";
 
 const configuration = new Configuration({
@@ -67,10 +70,12 @@ const CompletionRequest = async (prompt: string) => {
   }
 };
 
-// TODO allen Maybe this should be in a types file somehwere?
+// TODO allen Maybe this should be in a types file somewhere?
+// TODO allen split into a few different API endpoints
 export type SpeechToTextRequest = {
   b64FileString: string; // base64 encoded string
   index: number;
+  returnType?: "speechToText" | "speechToAudioResponse";
 };
 
 export type SpeechToTextResponse = {
@@ -85,7 +90,8 @@ const restricted = async (req: NextApiRequest, res: NextApiResponse) => {
   const session = await getServerAuthSession({ req, res });
 
   if (session) {
-    const { b64FileString, index } = req.body as SpeechToTextRequest;
+    const { b64FileString, index, returnType } =
+      req.body as SpeechToTextRequest;
     const blob = base64ToBlob(b64FileString);
     const result = await speechToTextQuery(blob);
 
@@ -93,6 +99,12 @@ const restricted = async (req: NextApiRequest, res: NextApiResponse) => {
       textModelResp: result,
       index: index,
     };
+
+    if (returnType === "speechToText") {
+      res.send(resp);
+      return;
+    }
+
     if (typeof resp.textModelResp.text !== "undefined") {
       const completion = await CompletionRequest(resp.textModelResp.text);
       console.log("completion status", completion?.status);
@@ -107,14 +119,11 @@ const restricted = async (req: NextApiRequest, res: NextApiResponse) => {
     }
     res.send(resp);
   } else {
-    const txt = "A test of speech to text";
-    generateSpeech(txt, ttsClient)
-      .catch((err) => {
-        console.error("Speech Generation Error:", err);
-      })
-      .then((audioContent) => {});
+    // TODO allen, this kinda works but it returns right away, finish
+    // const out = await activateSpeechToText();
     res.send({
       error: "Sorry - you have to be signed in to use this functionality!",
+      // temp: out,
     });
   }
 };
