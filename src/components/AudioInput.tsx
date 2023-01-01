@@ -87,7 +87,7 @@ export const AudioInput = (): JSX.Element => {
   };
 
   const handleClearButtonClick = () => {
-    setFullResponse(null);
+    setFullResponse(undefined);
   };
 
   const record = () => {

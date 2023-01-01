@@ -26,6 +26,15 @@ export const speechToTextQuery = async (
 };
 
 /**
+ * Src: https://stackoverflow.com/questions/1447407/whats-the-equivalent-of-javas-thread-sleep-in-javascript
+ * @param msec time in ms
+ * @returns
+ */
+const sleep = async (msec: number) => {
+  return new Promise((resolve) => setTimeout(resolve, msec));
+};
+
+/**
  * Checks if huggingface endpoint is live
  * @param numTries
  * @param maxRetries
@@ -33,29 +42,28 @@ export const speechToTextQuery = async (
  * @returns
  */
 export const activateSpeechToText = async (
-  numTries: number = 0,
-  maxRetries = 4,
+  maxRetries = 3,
   retryDelay = 10000
-): Promise<SpeechToTextModelResp> => {
-  if (numTries > maxRetries) {
-    return { text: "error", error: "Max retries exceeded" };
-  }
-  const response = await fetch(
-    "https://api-inference.huggingface.co/models/openai/whisper-tiny.en",
-    {
-      headers: {
-        Authorization: `Bearer ${process.env.HUGGINGFACE_WRITE_KEY}`,
-      },
-      method: "POST",
+): Promise<boolean> => {
+  for (let retries = 0; retries < maxRetries; retries++) {
+    const response = await fetch(
+      "https://api-inference.huggingface.co/models/openai/whisper-tiny.en",
+      {
+        headers: {
+          Authorization: `Bearer ${process.env.HUGGINGFACE_WRITE_KEY}`,
+        },
+        method: "POST",
+      }
+    );
+    let result = (await response.json()) as SpeechToTextModelResp;
+    if (result.error && result.error.includes("is currently loading")) {
+      console.log(`Endpoint is not live, retries = ${retries}`, result);
+      await sleep(retryDelay);
+    } else {
+      console.log("Endpoint is live", result);
+      return true;
     }
-  );
-  let result = (await response.json()) as SpeechToTextModelResp;
-
-  if (result.error && result.estimated_time) {
-    console.log("Model not loaded, setting timeout", result);
-    setTimeout(async () => {
-      result = await activateSpeechToText(numTries + 1);
-    }, retryDelay);
   }
-  return result as SpeechToTextModelResp;
+
+  return false;
 };

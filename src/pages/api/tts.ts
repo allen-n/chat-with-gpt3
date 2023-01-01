@@ -92,6 +92,7 @@ const restricted = async (req: NextApiRequest, res: NextApiResponse) => {
   if (session) {
     const { b64FileString, index, returnType } =
       req.body as SpeechToTextRequest;
+
     const blob = base64ToBlob(b64FileString);
     const result = await speechToTextQuery(blob);
 
@@ -119,11 +120,8 @@ const restricted = async (req: NextApiRequest, res: NextApiResponse) => {
     }
     res.send(resp);
   } else {
-    // TODO allen, this kinda works but it returns right away, finish
-    // const out = await activateSpeechToText();
     res.send({
       error: "Sorry - you have to be signed in to use this functionality!",
-      // temp: out,
     });
   }
 };
