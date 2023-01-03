@@ -1,9 +1,9 @@
 import { type NextPage } from "next";
 import Script from "next/script";
 import { useSession } from "next-auth/react";
-import { useState, useRef } from "react";
+import { useState, useRef, useEffect } from "react";
 import Head from "next/head";
-import { Toaster } from "react-hot-toast";
+import { Toaster, toast } from "react-hot-toast";
 import { HomeScreen } from "../components/HomeScreen";
 import stringhash from "string-hash";
 import { trpc } from "../utils/trpc";
@@ -18,9 +18,18 @@ const Home: NextPage = () => {
   const inputRef = useRef<HTMLInputElement>(null);
   const passwordSuccess = trpc.auth.checkPassword.useQuery({ text: password });
   // TODO allen re-enable
-  // const modelLoaded = trpc.resources.loadSpeechToText.useQuery({
-  //   key: "modelLoaded",
-  // });
+  const modelLoaded = trpc.resources.loadSpeechToText.useQuery(
+    {
+      key: "modelLoaded",
+    },
+    { enabled: isLoggedIn(sessionStatus), staleTime: 3600000 }
+  );
+
+  useEffect(() => {
+    if (modelLoaded.data?.modelLoaded) {
+      toast.success("Model loaded!");
+    }
+  }, [modelLoaded]);
   /**
    * Component source: https://tailwindcomponents.com/component/login-page-16
    * @returns JSX.Element
@@ -88,10 +97,7 @@ const Home: NextPage = () => {
       </Head>
       <main className="flex min-h-screen flex-col items-center justify-center overflow-y-hidden bg-gradient-to-b from-[#2e026d] to-[#15162c]">
         {/* TODO allen fixme before pushing to prod - model loader works, maybe hide behind auth? */}
-        {/* {modelLoaded.isLoading
-          ? "Model Loading!"
-          : `Model Loaded: ${modelLoaded.data?.modelLoaded}`} */}
-        <HomeScreen />
+        {/* <HomeScreen /> */}
         {!passwordSuccess.data?.passwordValid && !isLoggedIn(sessionStatus) && (
           <PasswordInput />
         )}

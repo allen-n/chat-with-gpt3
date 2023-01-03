@@ -1,9 +1,17 @@
+import { z } from "zod";
 // TODO allen Maybe this should be in a types file somehwere?
-export type SpeechToTextModelResp = {
-  text: string;
-  error?: string;
-  estimated_time?: number;
-};
+export const SpeechToTextModelResp = z.object({
+  text: z.string(),
+  error: z.string().nullish(),
+  estimated_time: z.number().nullish(),
+});
+
+export type SpeechToTextModelResp = z.infer<typeof SpeechToTextModelResp>;
+// export type SpeechToTextModelResp = {
+//   text: string;
+//   error?: string;
+//   estimated_time?: number;
+// };
 
 /**
  *
@@ -60,7 +68,7 @@ export const activateSpeechToText = async (
       console.log(`Endpoint is not live, retries = ${retries}`, result);
       await sleep(retryDelay);
     } else {
-      console.log("Endpoint is live", result);
+      console.log("Speech to text endpoint is live");
       return true;
     }
   }

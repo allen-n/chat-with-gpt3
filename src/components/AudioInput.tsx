@@ -7,6 +7,7 @@ import { ConversationRowProps } from "./ConversationRow";
 import toast from "react-hot-toast";
 
 import { getBaseUrl } from "../utils/trpc";
+import { trpc } from "../utils/trpc";
 import {
   type SpeechToTextRequest,
   type SpeechToTextResponse,
@@ -21,6 +22,31 @@ export const AudioInput = (): JSX.Element => {
   );
   const [stream, setStream] = useState<MediaStream | null>(null);
   const [audioChunks, setAudioChunks] = useState<Blob[]>([]);
+  const [audioChunkString, setAudioChunkString] = useState<string>("");
+  const [textChunks, setTextChunks] = useState<string[]>([]);
+
+  // tRPC query hooks
+  const userASR = trpc.speech.asr.useQuery(
+    {
+      req: {
+        returnType: "speechToText",
+        index: audioChunks.length,
+        b64FileString: audioChunkString,
+      },
+    },
+    {
+      enabled: audioChunkString !== "",
+      onError: (err) => toast.error(`"Error: ${err}`),
+      onSuccess: (data) => {
+        console.log("data", data);
+        if (data.text) {
+          setTextChunks([...textChunks, data.text]);
+          setAudioChunkString(""); // Reset the current chunk to be converted
+        }
+        console.log("textChunks", textChunks);
+      },
+    }
+  );
 
   // API Call state hooks
   const [textToSpeechResponse, setTextToSpeechResponse] = useState<string>("");
@@ -101,15 +127,30 @@ export const AudioInput = (): JSX.Element => {
         };
         const mediaRecorder = new MediaRecorder(stream, options);
 
-        mediaRecorder.ondataavailable = (e) => {
+        mediaRecorder.ondataavailable = async (e) => {
           let chunks = audioChunks;
+
           chunks.push(e.data);
           console.debug(`Pushed ${e.data.size} bytes of audio data.`);
 
-          // // TODO allen: check the buffers to decide when  to send transcription requests
+          // TODO allen: check the buffers to decide when  to send transcription requests
           // e.data.arrayBuffer().then((buffer) => {
-          //   console.log("buffer", buffer);
+          //   const b = new Uint8Array(buffer);
+
+          //   const len = b.length;
+          //   let total = 0;
+          //   let i = 0;
+          //   let rms = 0;
+          //   while (i < len) {
+          //     total += Math.abs(b[i++] || 0);
+          //   }
+          //   rms = Math.sqrt(total / len);
+          //   console.log("buffer rms = ", rms);
           // });
+
+          const b64string = await blobToBase64(e.data);
+          setAudioChunkString(b64string);
+
           setAudioChunks(chunks);
         };
 
@@ -117,6 +158,7 @@ export const AudioInput = (): JSX.Element => {
           var blob = new Blob(audioChunks, {
             type: "audio/ogg; codecs=opus",
           });
+
           blobToBase64(blob).then((blobString) => {
             const req: SpeechToTextRequest = {
               b64FileString: blobString,
@@ -145,7 +187,7 @@ export const AudioInput = (): JSX.Element => {
                     toast.success("Success!");
 
                     const buff = resp.speechModelResp;
-                    if (typeof buff !== "undefined") {
+                    if (typeof buff !== "undefined" && buff !== null) {
                       const blob = base64ToBlob(buff);
                       var blobURL = window.URL.createObjectURL(blob);
                       if (playerRef.current) {
@@ -200,7 +242,7 @@ export const AudioInput = (): JSX.Element => {
   return (
     <>
       {conversationRows && (
-        <div>
+        <>
           {<ConversationContainer {...conversationRows} />}
           <div className="px-4">
             <div className="hidden"></div>
@@ -211,7 +253,7 @@ export const AudioInput = (): JSX.Element => {
               className={audioPlayerStyle}
             ></audio>
           </div>
-        </div>
+        </>
       )}
       <div className="items-left flex w-full flex-col justify-center p-4">
         <div id="recodingBtn" className="py-1 text-center">

@@ -1,11 +1,8 @@
 import { type NextApiRequest, type NextApiResponse } from "next";
+import { z } from "zod";
 
 import { getServerAuthSession } from "../../server/common/get-server-auth-session";
-import {
-  speechToTextQuery,
-  activateSpeechToText,
-  type SpeechToTextModelResp,
-} from "../../utils/tts";
+import { speechToTextQuery, SpeechToTextModelResp } from "../../utils/tts";
 import { base64ToBlob, buffToBase64 } from "../../utils/encoding";
 
 import { Configuration, OpenAIApi } from "openai";
@@ -72,19 +69,23 @@ const CompletionRequest = async (prompt: string) => {
 
 // TODO allen Maybe this should be in a types file somewhere?
 // TODO allen split into a few different API endpoints
-export type SpeechToTextRequest = {
-  b64FileString: string; // base64 encoded string
-  index: number;
-  returnType?: "speechToText" | "speechToAudioResponse";
-};
+export const SpeechToTextRequest = z.object({
+  b64FileString: z.string(),
+  index: z.number().nullable(),
+  returnType: z.enum(["speechToText", "speechToAudioResponse"]).nullish(),
+});
 
-export type SpeechToTextResponse = {
-  textModelResp: SpeechToTextModelResp;
-  llmTextResp?: string;
-  speechModelResp?: string;
-  index: number;
-  error?: string;
-};
+export type SpeechToTextRequest = z.infer<typeof SpeechToTextRequest>;
+
+export const SpeechToTextResponse = z.object({
+  textModelResp: SpeechToTextModelResp,
+  llmTextResp: z.string().nullish(),
+  speechModelResp: z.string().nullish(),
+  index: z.number().default(0),
+  error: z.string().nullish(),
+});
+
+export type SpeechToTextResponse = z.infer<typeof SpeechToTextResponse>;
 
 const restricted = async (req: NextApiRequest, res: NextApiResponse) => {
   const session = await getServerAuthSession({ req, res });
@@ -98,7 +99,7 @@ const restricted = async (req: NextApiRequest, res: NextApiResponse) => {
 
     const resp: SpeechToTextResponse = {
       textModelResp: result,
-      index: index,
+      index: index || 0,
     };
 
     if (returnType === "speechToText") {
