@@ -1,8 +1,5 @@
 import React, { useRef, useState, useEffect } from "react";
-import {
-  ConversationContainer,
-  type ConversationContainerProps,
-} from "./ConversationContainer";
+import { ConversationContainer } from "./ConversationContainer";
 import { ConversationRowProps } from "./ConversationRow";
 import toast from "react-hot-toast";
 
@@ -25,6 +22,7 @@ export const AudioInput = (): JSX.Element => {
   const [stream, setStream] = useState<MediaStream | null>(null);
   const [audioChunks, setAudioChunks] = useState<Blob[]>([]);
   const [currentUserText, setCurrentUserText] = useState<string>("");
+  const [userTextComplete, setUserTextComplete] = useState<boolean>(false);
 
   // API Call state hooks
   const [textToSpeechResponse, setTextToSpeechResponse] = useState<string>("");
@@ -32,7 +30,7 @@ export const AudioInput = (): JSX.Element => {
 
   // UI State Hooks
   const [conversationRows, setConversationRows] =
-    useState<ConversationContainerProps>();
+    useState<ConversationRowProps[]>();
   const [shouldSendCompletionRequest, setShouldSendCompletionRequest] =
     useState<boolean>(false);
   const [ticksWithoutSpeech, setTicksWithoutSpeech] = useState<number>(0);
@@ -45,6 +43,7 @@ export const AudioInput = (): JSX.Element => {
     },
     onSuccess: (data) => {
       if (data.text) {
+        console.log("Setting user text to: ", data.text);
         setCurrentUserText(data.text);
       }
     },
@@ -53,7 +52,7 @@ export const AudioInput = (): JSX.Element => {
   const modelSpeechQuery = trpc.speech.completionSpeech.useMutation({
     onError: (err) => {
       toast.error("Sorry, we had a problem 😬");
-      console.error(err);
+      console.warn(err);
     },
     onSuccess: (data) => {
       if (data?.error) {
@@ -67,6 +66,19 @@ export const AudioInput = (): JSX.Element => {
   });
 
   // UI Effect hooks
+
+  // Clear audio chunks after user text is complete
+  useEffect(() => {
+    if (userTextComplete && userASRQuery.isSuccess) {
+      setTimeout(() => {
+        audioChunks.length = 0;
+        setAudioChunks(audioChunks);
+        console.log("empty Audio chunks: ", audioChunks.length, " chunks.");
+      }, 3000);
+    }
+  }, [userTextComplete, userASRQuery.status]);
+
+  // Update the full response text in the conversation item
   useEffect(() => {
     if (fullResponse) {
       const convoRow: ConversationRowProps = {
@@ -76,14 +88,13 @@ export const AudioInput = (): JSX.Element => {
           fullResponse?.llmTextResp || "Houston, we had a problem",
         incomingUserTextComplete: true,
       };
+      console.log(conversationRows);
       if (conversationRows) {
-        let rows = conversationRows.conversationRows;
-        let newRows = rows.filter((row) => !row.incomingUserTextComplete);
-        conversationRows.conversationRows = newRows;
-        newRows.push(convoRow);
-        setConversationRows(conversationRows);
+        const rows = [...conversationRows];
+        rows[rows.length - 1] = convoRow;
+        setConversationRows(rows);
       } else {
-        let rows: ConversationContainerProps = { conversationRows: [convoRow] };
+        let rows: ConversationRowProps[] = [convoRow];
         setConversationRows(rows);
       }
       const buff = fullResponse.speechModelResp;
@@ -96,29 +107,37 @@ export const AudioInput = (): JSX.Element => {
         } else {
           console.error("No audio player ref. :(");
         }
+      } else {
+        console.error("No audio buffer. :(", buff);
       }
     }
   }, [fullResponse]);
 
+  // Update the conversation item with the user text
   useEffect(() => {
     if (currentUserText) {
-      const convoRow: ConversationRowProps = {
-        incomingUserTextComplete: false,
-        incomingUserText: currentUserText,
-      };
       if (conversationRows) {
-        let rows = conversationRows.conversationRows;
-        rows[rows.length - 1] = convoRow;
-        setConversationRows(conversationRows);
+        const rows = [...conversationRows];
+        rows[rows.length - 1] = {
+          incomingUserText: currentUserText,
+          incomingUserTextComplete: userTextComplete,
+        };
+        setConversationRows(rows);
       } else {
-        let rows: ConversationContainerProps = { conversationRows: [convoRow] };
+        const convoRow: ConversationRowProps = {
+          incomingUserText: currentUserText,
+          incomingUserTextComplete: userTextComplete,
+        };
+        let rows: ConversationRowProps[] = [convoRow];
         setConversationRows(rows);
       }
     }
-  }, [currentUserText]);
+  }, [currentUserText, userTextComplete]);
 
+  // Send the completion request when the user text is complete
   useEffect(() => {
     if (userASRQuery.isSuccess && shouldSendCompletionRequest) {
+      console.log("Sending completion request!");
       modelSpeechQuery.mutate({
         resp: {
           textModelResp: {
@@ -130,24 +149,8 @@ export const AudioInput = (): JSX.Element => {
     }
   }, [userASRQuery.status]);
 
+  // If we have enough ticks without speech, stop recording (using the same interface as the record button)
   useEffect(() => {
-    if (isRecording) {
-      const convoRow: ConversationRowProps = {
-        incomingUserTextComplete: false,
-      };
-      if (conversationRows) {
-        let rows = conversationRows.conversationRows;
-        rows.push(convoRow);
-        setConversationRows(conversationRows);
-      } else {
-        let rows: ConversationContainerProps = { conversationRows: [convoRow] };
-        setConversationRows(rows);
-      }
-    }
-  }, [isRecording]);
-
-  useEffect(() => {
-    // If we have enough ticks without speech, stop recording (using the same interface as the record button)
     if (ticksWithoutSpeech > maxSilentTicks && isRecording) {
       toast.success("End of speech detected!");
       handleMicButtonClick();
@@ -158,6 +161,23 @@ export const AudioInput = (): JSX.Element => {
   // Ref hooks
   const playerRef = useRef<HTMLAudioElement>(null);
 
+  // Utility functions
+  const clearEmptyConversationRows = () => {
+    if (conversationRows) {
+      const rows = [...conversationRows];
+      const newRows = rows.filter((row) => row.incomingUserText);
+      setConversationRows(newRows);
+    }
+  };
+
+  const addNewConversationRow = () => {
+    if (conversationRows) {
+      const rows = [...conversationRows];
+      rows.push({ incomingUserText: "", incomingUserTextComplete: false });
+      setConversationRows(rows);
+    }
+  };
+
   const handleMicButtonClick = () => {
     if (isRecording) {
       stopRecoding();
@@ -165,10 +185,15 @@ export const AudioInput = (): JSX.Element => {
       setTextToSpeechResponse(currentUserText);
     } else {
       // Clear state for new data
+      clearEmptyConversationRows();
+      setCurrentUserText("");
       setTextToSpeechResponse("");
+      setUserTextComplete(false);
       setFullResponse(undefined);
+
       // Start recording
       setIsRecording(true);
+      addNewConversationRow();
       record();
     }
   };
@@ -216,46 +241,48 @@ export const AudioInput = (): JSX.Element => {
         // Callback on the `recordingTimeSlice` interval
         mediaRecorder.ondataavailable = async (e) => {
           let chunks = audioChunks;
+          console.log("Pushing a chunk, len now: ", chunks.length, " chunks.");
           chunks.push(e.data);
-          console.debug(`Pushed ${e.data.size} bytes of audio data.`);
           const rms = await getAudioRMS(e);
+          console.debug(
+            `Pushed ${e.data.size} bytes of audio data. RMS=${rms}`
+          );
+
           const blob = new Blob(chunks, {
             type: "audio/ogg; codecs=opus",
           });
           const b64string = await blobToBase64(blob);
           setAudioChunks(chunks);
-
-          // userASRQuery.mutate({
-          //   req: {
-          //     returnType: "speechToText",
-          //     index: b64string.length,
-          //     b64FileString: b64string,
-          //   },
-          // });
+          userASRQuery.mutate({
+            req: {
+              returnType: "speechToText",
+              index: b64string.length,
+              b64FileString: b64string,
+            },
+          });
+          console.log("Audio chunks: ", chunks.length, " chunks.");
         };
 
         // Callback when the stream is stopped
         mediaRecorder.onstop = async (e) => {
           clearInterval(intervalID); // Stop checking the volume
-
+          setUserTextComplete(true); // Show loading indicator for robot text
           console.log("Media recorder stopped");
           const blob = new Blob(audioChunks, {
             type: "audio/ogg; codecs=opus",
           });
-          const b64string = await blobToBase64(blob);
-
-          // userASRQuery.mutate({
-          //   req: {
-          //     returnType: "speechToText",
-          //     index: b64string.length,
-          //     b64FileString: b64string,
-          //   },
-          // });
-          // setShouldSendCompletionRequest(true);
-
           const size = audioChunks.reduce((acc, chunk) => acc + chunk.size, 0);
           console.log(`Audio size: ${size / 1000}kb`);
-          setAudioChunks([]);
+          const b64string = await blobToBase64(blob);
+
+          userASRQuery.mutate({
+            req: {
+              returnType: "speechToText",
+              index: b64string.length,
+              b64FileString: b64string,
+            },
+          });
+          setShouldSendCompletionRequest(true);
         };
 
         mediaRecorder.start(recordingTimeSlice);
@@ -278,6 +305,8 @@ export const AudioInput = (): JSX.Element => {
     isRecording ? "red-300" : "white"
   } no-underline transition hover:bg-white/20`;
 
+  const recordBtnText = isRecording ? "🗣️ Stop" : "🎤 Record";
+
   return (
     <>
       {conversationRows && (
@@ -298,14 +327,14 @@ export const AudioInput = (): JSX.Element => {
         <div id="recodingBtn" className="py-1 text-center">
           <div className="hidden text-red-300" />
           <button className={btnStyle} onClick={handleMicButtonClick}>
-            Record
+            {recordBtnText}
           </button>
           {fullResponse && (
             <button
               className="mx-1 rounded-full bg-white/10 px-10 py-3 font-semibold text-white hover:animate-bottom-bounce"
               onClick={handleClearButtonClick}
             >
-              Clear
+              ❌ Clear
             </button>
           )}
         </div>

@@ -39,7 +39,20 @@ export const HomeScreen = (): JSX.Element => {
       <h1 className="text-5xl font-extrabold tracking-tight text-white sm:text-[5rem]">
         Chat <span className="text-[hsl(280,100%,70%)]">With</span> GPT3
       </h1>
-      <div id="test-div" className="grid gap-y-4 sm:grid-cols-1 md:grid-cols-2">
+      <div id="full-w-div" className="grid w-auto grid-cols-1 gap-y-4">
+        <div
+          className="flex  flex-col gap-4 rounded-xl bg-white/10 p-4
+        text-white hover:bg-white/20"
+        >
+          <h3 className="text-center text-2xl font-bold">Start talking 💬</h3>
+          <div className="text-center text-lg">
+            Press record ( 🎤 ) to start talking, stop talking for 2 seconds,
+            and let the machine do the rest.
+          </div>
+        </div>
+        <AudioInput />
+      </div>
+      {/* <div id="test-div" className="grid gap-y-4 sm:grid-cols-1 md:grid-cols-2">
         <div>
           <ConversationContainer conversationRows={conversationRows} />
         </div>
@@ -83,7 +96,7 @@ export const HomeScreen = (): JSX.Element => {
             ></input>
           </div>
         </div>
-      </div>
+      </div> */}
 
       {/* Real components */}
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 md:gap-8">

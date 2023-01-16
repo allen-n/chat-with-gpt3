@@ -38,11 +38,12 @@ export const ConversationRow = ({
   incomingBotText,
   incomingUserTextComplete = false,
 }: ConversationRowProps): JSX.Element => {
-  const placeholder = "Placeholder";
-  const [currentWords, setCurrentWords] = useState<Array<string>>([
-    placeholder,
-  ]);
-
+  console.log(
+    "convoRow current state",
+    incomingBotText,
+    incomingUserText,
+    incomingUserTextComplete
+  );
   return (
     <div className="container relative flex flex-col items-center justify-center gap-12 px-2 py-1 ">
       <div
