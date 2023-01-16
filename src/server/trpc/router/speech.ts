@@ -1,16 +1,6 @@
 import { z } from "zod";
 import { router, protectedProcedure } from "../trpc";
-import {
-  SpeechToTextRequest,
-  SpeechToTextResponse,
-} from "../../../pages/api/tts";
-import {
-  base64ToBlob,
-  buffToBase64,
-  cleanBase64String,
-} from "../../../utils/encoding";
-import { speechToTextQuery } from "../../../utils/tts";
-
+import { buffToBase64, cleanBase64String } from "../../../utils/encoding";
 import { Configuration, OpenAIApi } from "openai";
 import * as textToSpeech from "@google-cloud/text-to-speech";
 import * as speechToText from "@google-cloud/speech";
@@ -19,8 +9,31 @@ const configuration = new Configuration({
   apiKey: process.env.OPENAI_SK,
 });
 const openai = new OpenAIApi(configuration);
-
 const googleKeys = JSON.parse(process.env.GOOGLE_JWT_CREDS || "");
+
+export const SpeechToTextModelResp = z.object({
+  text: z.string(),
+  error: z.string().nullish(),
+  estimated_time: z.number().nullish(),
+});
+
+export const SpeechToTextRequest = z.object({
+  b64FileString: z.string(),
+  index: z.number().nullable(),
+  returnType: z.enum(["speechToText", "speechToAudioResponse"]).nullish(),
+});
+
+export const SpeechToTextResponse = z.object({
+  textModelResp: SpeechToTextModelResp,
+  llmTextResp: z.string().nullish(),
+  speechModelResp: z.string().nullish(),
+  index: z.number().default(0),
+  error: z.string().nullish(),
+});
+
+export type SpeechToTextRequest = z.infer<typeof SpeechToTextRequest>;
+export type SpeechToTextResponse = z.infer<typeof SpeechToTextResponse>;
+export type SpeechToTextModelResp = z.infer<typeof SpeechToTextModelResp>;
 
 const ttsClient: textToSpeech.TextToSpeechClient =
   new textToSpeech.TextToSpeechClient({
@@ -108,8 +121,14 @@ export const speechRouter = router({
     .input(z.object({ req: SpeechToTextRequest }))
     .mutation(async ({ input }) => {
       const result = await generateText(input?.req.b64FileString);
-      return result;
+      const resp: SpeechToTextModelResp = {
+        text: result,
+        error: null,
+        estimated_time: 0,
+      };
+      return resp;
     }),
+
   completionSpeech: protectedProcedure
     .input(z.object({ resp: SpeechToTextResponse }))
     .mutation(async ({ input }) => {
