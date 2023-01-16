@@ -30,6 +30,7 @@ const Home: NextPage = () => {
       toast.success("Model loaded!");
     }
   }, [modelLoaded]);
+
   /**
    * Component source: https://tailwindcomponents.com/component/login-page-16
    * @returns JSX.Element

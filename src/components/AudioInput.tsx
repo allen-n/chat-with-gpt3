@@ -23,30 +23,42 @@ export const AudioInput = (): JSX.Element => {
   const [stream, setStream] = useState<MediaStream | null>(null);
   const [audioChunks, setAudioChunks] = useState<Blob[]>([]);
   const [audioChunkString, setAudioChunkString] = useState<string>("");
-  const [textChunks, setTextChunks] = useState<string[]>([]);
+  const [currentUserText, setCurrentUserText] = useState<string>("");
 
   // tRPC query hooks
-  const userASR = trpc.speech.asr.useQuery(
-    {
-      req: {
-        returnType: "speechToText",
-        index: audioChunks.length,
-        b64FileString: audioChunkString,
-      },
+  const userASR = trpc.speech.asr.useMutation({
+    onError: (err) => toast.error(`"Error: ${err}`),
+    onSuccess: (data) => {
+      console.log("data", data);
+      if (data.text) {
+        setCurrentUserText(data.text);
+        // setAudioChunkString(""); // Reset the current chunk to be converted
+      }
+      console.log("currentUserText", currentUserText);
     },
-    {
-      enabled: audioChunkString !== "",
-      onError: (err) => toast.error(`"Error: ${err}`),
-      onSuccess: (data) => {
-        console.log("data", data);
-        if (data.text) {
-          setTextChunks([...textChunks, data.text]);
-          setAudioChunkString(""); // Reset the current chunk to be converted
-        }
-        console.log("textChunks", textChunks);
-      },
-    }
-  );
+  });
+
+  // const userASR = trpc.speech.asr.useMutation(
+  //   {
+  //     req: {
+  //       returnType: "speechToText",
+  //       index: audioChunks.length,
+  //       b64FileString: audioChunkString,
+  //     }
+  //   },
+  //   {
+  //     enabled: audioChunkString !== "",
+  //     onError: (err) => toast.error(`"Error: ${err}`),
+  //     onSuccess: (data) => {
+  //       console.log("data", data);
+  //       if (data.text) {
+  //         setCurrentUserText(data.text);
+  //         // setAudioChunkString(""); // Reset the current chunk to be converted
+  //       }
+  //       console.log("currentUserText", currentUserText);
+  //     },
+  //   }
+  // );
 
   // API Call state hooks
   const [textToSpeechResponse, setTextToSpeechResponse] = useState<string>("");
@@ -62,6 +74,7 @@ export const AudioInput = (): JSX.Element => {
 
   useEffect(() => {
     if (fullResponse) {
+      console.log("FULL RESP: ", fullResponse);
       const convoRow: ConversationRowProps = {
         incomingUserText:
           fullResponse?.textModelResp.text || "Houston, we had a problem",
@@ -147,69 +160,77 @@ export const AudioInput = (): JSX.Element => {
           //   rms = Math.sqrt(total / len);
           //   console.log("buffer rms = ", rms);
           // });
-
-          const b64string = await blobToBase64(e.data);
+          const blob = new Blob(chunks, {
+            type: "audio/ogg; codecs=opus",
+          });
+          const b64string = await blobToBase64(blob);
           setAudioChunkString(b64string);
-
           setAudioChunks(chunks);
+
+          const test = userASR.mutate({
+            req: {
+              returnType: "speechToText",
+              index: b64string.length,
+              b64FileString: b64string,
+            },
+          });
         };
 
         mediaRecorder.onstop = (e) => {
-          var blob = new Blob(audioChunks, {
-            type: "audio/ogg; codecs=opus",
-          });
+          console.log("Media recorder stopped");
+          // const blob = new Blob(audioChunks, {
+          //   type: "audio/ogg; codecs=opus",
+          // });
 
-          blobToBase64(blob).then((blobString) => {
-            const req: SpeechToTextRequest = {
-              b64FileString: blobString,
-              index: 0,
-            };
-            fetch(getBaseUrl() + "/api/tts", {
-              method: "POST",
-              headers: {
-                "Content-Type": "application/json",
-              },
-              body: JSON.stringify(req),
-            })
-              .then((res) => {
-                res.json().then((resJSON) => {
-                  const resp = resJSON as SpeechToTextResponse;
-                  if (typeof resp.error !== "undefined") {
-                    toast.error(resp.error);
-                    console.log("Missing resp.textModelResp", resp);
-                  } else if (typeof resp.textModelResp.error !== "undefined") {
-                    toast.error(
-                      `Sorry, ${resp.textModelResp.error}. Give us ~${
-                        resp.textModelResp.estimated_time || "a few "
-                      }s to fix it.`
-                    );
-                  } else {
-                    toast.success("Success!");
+          // blobToBase64(blob).then((blobString) => {
+          //   const req: SpeechToTextRequest = {
+          //     b64FileString: blobString,
+          //     index: 0,
+          //   };
+          //   fetch(getBaseUrl() + "/api/tts", {
+          //     method: "POST",
+          //     headers: {
+          //       "Content-Type": "application/json",
+          //     },
+          //     body: JSON.stringify(req),
+          //   })
+          //     .then((res) => {
+          //       res.json().then((resJSON) => {
+          //         const resp = resJSON as SpeechToTextResponse;
+          //         if (typeof resp.error !== "undefined") {
+          //           toast.error(resp.error);
+          //           console.log("Missing resp.textModelResp", resp);
+          //         } else if (typeof resp.textModelResp.error !== "undefined") {
+          //           toast.error(
+          //             `Sorry, ${resp.textModelResp.error}. Give us ~${
+          //               resp.textModelResp.estimated_time || "a few "
+          //             }s to fix it.`
+          //           );
+          //         } else {
+          //           toast.success("Success!");
 
-                    const buff = resp.speechModelResp;
-                    if (typeof buff !== "undefined" && buff !== null) {
-                      const blob = base64ToBlob(buff);
-                      var blobURL = window.URL.createObjectURL(blob);
-                      if (playerRef.current) {
-                        playerRef.current.src = blobURL;
-                      } else {
-                        console.error("No audio player ref. :(");
-                      }
-                    } else {
-                      console.error("No speech model response. :(");
-                    }
-                    setTextToSpeechResponse(resp.textModelResp.text);
-                    setFullResponse(resp);
-                  }
-                });
-              })
-              .catch((err) => {
-                toast.error("Error: " + err);
-              });
-          });
+          //           const buff = resp.speechModelResp;
+          //           if (typeof buff !== "undefined" && buff !== null) {
+          //             const blob = base64ToBlob(buff);
+          //             var blobURL = window.URL.createObjectURL(blob);
+          //             if (playerRef.current) {
+          //               playerRef.current.src = blobURL;
+          //             } else {
+          //               console.error("No audio player ref. :(");
+          //             }
+          //           } else {
+          //             console.error("No speech model response. :(");
+          //           }
+          //           setTextToSpeechResponse(resp.textModelResp.text);
+          //           setFullResponse(resp);
+          //         }
+          //       });
+          //     })
+          //     .catch((err) => {
+          //       toast.error("Error: " + err);
+          //     });
+          // });
 
-          // var blobURL = window.URL.createObjectURL(blob);
-          // if (playerRef.current) playerRef.current.src = blobURL;
           const size = audioChunks.reduce((acc, chunk) => acc + chunk.size, 0);
           console.log(`Audio size: ${size / 1000}kb`);
           setAudioChunks([]);

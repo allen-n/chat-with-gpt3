@@ -42,3 +42,15 @@ export const base64ToBlob = (
   });
   return blob;
 };
+
+/**
+ * Mutate the base64 string to remove the data type
+ * @param base64String
+ * @param contentType
+ */
+export const cleanBase64String = (
+  base64String: string,
+  contentType: string = "audio/ogg; codecs=opus"
+): string => {
+  return base64String.replace(`data:${contentType};base64,`, "");
+};

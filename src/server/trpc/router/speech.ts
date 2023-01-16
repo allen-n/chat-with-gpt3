@@ -4,11 +4,16 @@ import {
   SpeechToTextRequest,
   SpeechToTextResponse,
 } from "../../../pages/api/tts";
-import { base64ToBlob, buffToBase64 } from "../../../utils/encoding";
+import {
+  base64ToBlob,
+  buffToBase64,
+  cleanBase64String,
+} from "../../../utils/encoding";
 import { speechToTextQuery } from "../../../utils/tts";
 
 import { Configuration, OpenAIApi } from "openai";
 import * as textToSpeech from "@google-cloud/text-to-speech";
+import * as speechToText from "@google-cloud/speech";
 
 const configuration = new Configuration({
   apiKey: process.env.OPENAI_SK,
@@ -24,6 +29,13 @@ const ttsClient: textToSpeech.TextToSpeechClient =
       private_key: googleKeys.private_key,
     },
   });
+
+const asrClient: speechToText.SpeechClient = new speechToText.SpeechClient({
+  credentials: {
+    client_email: googleKeys.client_email,
+    private_key: googleKeys.private_key,
+  },
+});
 
 // TODO allen: https://cloud.google.com/nodejs/docs/reference/google-auth-library/latest
 const generateSpeech = async (
@@ -49,6 +61,28 @@ const generateSpeech = async (
   return response.audioContent as Buffer;
 };
 
+const generateText = async (audioBase64: string): Promise<string> => {
+  const config = {
+    encoding: "WEBM_OPUS",
+    languageCode: "en-US",
+  };
+  audioBase64 = cleanBase64String(audioBase64);
+  const request = {
+    audio: { content: audioBase64 },
+    config: config,
+  };
+
+  // The type here is a bit weird, but it's correct
+  // @ts-ignore
+  const [response] = await asrClient.recognize(request);
+
+  const transcription = response.results
+    .map((result: any) => result.alternatives[0].transcript)
+    .join("\n");
+  // console.log(`Transcription: ${transcription}`);
+  return transcription;
+};
+
 const CompletionRequest = async (prompt: string) => {
   // TODO allen: will need to prompt engineer a bit to keep context of the conversation
   try {
@@ -72,14 +106,13 @@ const CompletionRequest = async (prompt: string) => {
 export const speechRouter = router({
   asr: protectedProcedure
     .input(z.object({ req: SpeechToTextRequest }))
-    .query(async ({ input }) => {
-      const blob = base64ToBlob(input?.req.b64FileString);
-      const result = await speechToTextQuery(blob);
+    .mutation(async ({ input }) => {
+      const result = await generateText(input?.req.b64FileString);
       return result;
     }),
   completionSpeech: protectedProcedure
     .input(z.object({ resp: SpeechToTextResponse }))
-    .query(async ({ input }) => {
+    .mutation(async ({ input }) => {
       if (input) {
         const completion = await CompletionRequest(
           input?.resp.textModelResp.text
