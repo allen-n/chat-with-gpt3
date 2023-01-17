@@ -36,6 +36,10 @@ export const HomeScreen = (): JSX.Element => {
 
   return (
     <div className="container flex flex-col items-center justify-center gap-12 px-4 py-16 ">
+      <div className="fixed right-5 top-5">
+        <SignIn />
+      </div>
+
       <h1 className="text-5xl font-extrabold tracking-tight text-white sm:text-[5rem]">
         Chat <span className="text-[hsl(280,100%,70%)]">With</span> GPT3
       </h1>
@@ -50,85 +54,19 @@ export const HomeScreen = (): JSX.Element => {
             and let the machine do the rest.
           </div>
         </div>
-        <AudioInput />
-      </div>
-      {/* <div id="test-div" className="grid gap-y-4 sm:grid-cols-1 md:grid-cols-2">
-        <div>
-          <ConversationContainer conversationRows={conversationRows} />
-        </div>
-
-        <div className="flex flex-col">
-          <ConversationRow
-            incomingUserText={currentUserText}
-            incomingBotText={currentBotText}
-            incomingUserTextComplete={userTextComplete}
-          />
-          <div className="container relative flex flex-col items-center justify-center gap-2 px-2 py-1 ">
+        <div className="text-md w-fit justify-self-center rounded-xl bg-white/10 p-3 text-center text-white">
+          {isLoggedIn(sessionStatus) ? (
             <AudioInput />
-          </div>
-          <div className="grid h-10 w-full grid-cols-2 gap-y-4 p-4 text-white">
-            <p className="">User text</p>
-            <input
-              className="w-full rounded-md bg-white/20 text-center text-white  hover:bg-white/10"
-              title="userTextInput"
-              placeholder="Type test text"
-              type="text"
-              autoFocus
-              onChange={(e) => {
-                setCurrentUserText(e.target.value);
-                if (e.target.value.charAt(e.target.value.length - 1) === "!") {
-                  setUserTextComplete(true);
-                } else {
-                  setUserTextComplete(false);
-                }
-              }}
-            ></input>
-            <p className="">Bot text</p>
-            <input
-              className="w-full rounded-md bg-white/20 text-center text-white  hover:bg-white/10"
-              title="userTextInput"
-              placeholder="Type test text"
-              type="text"
-              autoFocus
-              onChange={(e) => {
-                setCurrentBotText(e.target.value);
-              }}
-            ></input>
-          </div>
-        </div>
-      </div> */}
-
-      {/* Real components */}
-      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 md:gap-8">
-        <div
-          className="flex max-w-xs flex-col gap-4 rounded-xl bg-white/10 p-4
-        text-white hover:bg-white/20"
-        >
-          <h3 className="text-2xl font-bold">Start talking →</h3>
-          <div className="text-lg">
-            Press record to start talking, press again when you stop, and let
-            the machine do the rest.
-          </div>
-        </div>
-        <div
-          className="flex max-w-xs flex-col gap-4 rounded-xl bg-white/10 p-4
-        text-white hover:bg-white/20"
-        >
-          <div>
-            {isLoggedIn(sessionStatus) ? (
-              <AudioInput />
-            ) : (
-              "Sorry, you need to sign in for this 👇"
-            )}
-          </div>
+          ) : (
+            "Sorry, you need to sign in to use this 👆"
+          )}
         </div>
       </div>
 
       <div className="flex flex-col items-center gap-2">
-        <p className="text-2xl text-white">
+        {/* <p className="text-2xl text-white">
           {hello.data ? hello.data.greeting : ""}
-        </p>
-        <SignIn />
+        </p> */}
       </div>
     </div>
   );

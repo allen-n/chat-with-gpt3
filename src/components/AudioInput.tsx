@@ -1,6 +1,7 @@
 import React, { useRef, useState, useEffect } from "react";
 import { ConversationContainer } from "./ConversationContainer";
 import { ConversationRowProps } from "./ConversationRow";
+import { ConversationContainerProps } from "./ConversationContainer";
 import toast from "react-hot-toast";
 
 import { trpc } from "../utils/trpc";
@@ -30,7 +31,7 @@ export const AudioInput = (): JSX.Element => {
 
   // UI State Hooks
   const [conversationRows, setConversationRows] =
-    useState<ConversationRowProps[]>();
+    useState<ConversationContainerProps>();
   const [shouldSendCompletionRequest, setShouldSendCompletionRequest] =
     useState<boolean>(false);
   const [ticksWithoutSpeech, setTicksWithoutSpeech] = useState<number>(0);
@@ -43,7 +44,7 @@ export const AudioInput = (): JSX.Element => {
     },
     onSuccess: (data) => {
       if (data.text) {
-        console.log("Setting user text to: ", data.text);
+        console.debug("Setting user text to: ", data.text);
         setCurrentUserText(data.text);
       }
     },
@@ -70,10 +71,10 @@ export const AudioInput = (): JSX.Element => {
   // Clear audio chunks after user text is complete
   useEffect(() => {
     if (userTextComplete && userASRQuery.isSuccess) {
+      // TODO @allen-n: determine a better way to do this
       setTimeout(() => {
         audioChunks.length = 0;
         setAudioChunks(audioChunks);
-        console.log("empty Audio chunks: ", audioChunks.length, " chunks.");
       }, 3000);
     }
   }, [userTextComplete, userASRQuery.status]);
@@ -88,14 +89,14 @@ export const AudioInput = (): JSX.Element => {
           fullResponse?.llmTextResp || "Houston, we had a problem",
         incomingUserTextComplete: true,
       };
-      console.log(conversationRows);
+
       if (conversationRows) {
-        const rows = [...conversationRows];
+        const rows = [...conversationRows.rows];
         rows[rows.length - 1] = convoRow;
-        setConversationRows(rows);
+        setConversationRows({ rows: rows });
       } else {
         let rows: ConversationRowProps[] = [convoRow];
-        setConversationRows(rows);
+        setConversationRows({ rows: rows });
       }
       const buff = fullResponse.speechModelResp;
       if (typeof buff !== "undefined" && buff !== null) {
@@ -117,19 +118,21 @@ export const AudioInput = (): JSX.Element => {
   useEffect(() => {
     if (currentUserText) {
       if (conversationRows) {
-        const rows = [...conversationRows];
+        const rows = [...conversationRows.rows];
         rows[rows.length - 1] = {
           incomingUserText: currentUserText,
           incomingUserTextComplete: userTextComplete,
         };
-        setConversationRows(rows);
+
+        setConversationRows({ rows: rows });
       } else {
         const convoRow: ConversationRowProps = {
           incomingUserText: currentUserText,
           incomingUserTextComplete: userTextComplete,
         };
         let rows: ConversationRowProps[] = [convoRow];
-        setConversationRows(rows);
+
+        setConversationRows({ rows: rows });
       }
     }
   }, [currentUserText, userTextComplete]);
@@ -137,7 +140,6 @@ export const AudioInput = (): JSX.Element => {
   // Send the completion request when the user text is complete
   useEffect(() => {
     if (userASRQuery.isSuccess && shouldSendCompletionRequest) {
-      console.log("Sending completion request!");
       modelSpeechQuery.mutate({
         resp: {
           textModelResp: {
@@ -164,17 +166,19 @@ export const AudioInput = (): JSX.Element => {
   // Utility functions
   const clearEmptyConversationRows = () => {
     if (conversationRows) {
-      const rows = [...conversationRows];
+      const rows = [...conversationRows.rows];
       const newRows = rows.filter((row) => row.incomingUserText);
-      setConversationRows(newRows);
+
+      setConversationRows({ rows: newRows });
     }
   };
 
   const addNewConversationRow = () => {
     if (conversationRows) {
-      const rows = [...conversationRows];
+      const rows = [...conversationRows.rows];
       rows.push({ incomingUserText: "", incomingUserTextComplete: false });
-      setConversationRows(rows);
+
+      setConversationRows({ rows: rows });
     }
   };
 
@@ -241,7 +245,6 @@ export const AudioInput = (): JSX.Element => {
         // Callback on the `recordingTimeSlice` interval
         mediaRecorder.ondataavailable = async (e) => {
           let chunks = audioChunks;
-          console.log("Pushing a chunk, len now: ", chunks.length, " chunks.");
           chunks.push(e.data);
           const rms = await getAudioRMS(e);
           console.debug(
@@ -260,19 +263,17 @@ export const AudioInput = (): JSX.Element => {
               b64FileString: b64string,
             },
           });
-          console.log("Audio chunks: ", chunks.length, " chunks.");
         };
 
         // Callback when the stream is stopped
         mediaRecorder.onstop = async (e) => {
           clearInterval(intervalID); // Stop checking the volume
           setUserTextComplete(true); // Show loading indicator for robot text
-          console.log("Media recorder stopped");
           const blob = new Blob(audioChunks, {
             type: "audio/ogg; codecs=opus",
           });
           const size = audioChunks.reduce((acc, chunk) => acc + chunk.size, 0);
-          console.log(`Audio size: ${size / 1000}kb`);
+          console.debug(`Audio size: ${size / 1000}kb`);
           const b64string = await blobToBase64(blob);
 
           userASRQuery.mutate({

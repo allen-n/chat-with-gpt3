@@ -92,7 +92,6 @@ const generateText = async (audioBase64: string): Promise<string> => {
   const transcription = response.results
     .map((result: any) => result.alternatives[0].transcript)
     .join("\n");
-  // console.log(`Transcription: ${transcription}`);
   return transcription;
 };
 
@@ -136,12 +135,12 @@ export const speechRouter = router({
         const completion = await CompletionRequest(
           input?.resp.textModelResp.text
         );
-        console.log("completion status", completion?.status);
-        console.log("completion usage", completion?.data.usage);
+        console.debug("completion status", completion?.status);
+        console.debug("completion usage", completion?.data.usage);
         const choice =
           completion?.data.choices[0]?.text ||
           "I'm at a loss for words, sorry!";
-        console.log("completion choice", choice);
+        console.debug("completion choice", choice);
         const audioContent = await generateSpeech(choice, ttsClient);
 
         input.resp.speechModelResp = buffToBase64(audioContent);

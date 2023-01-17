@@ -1,9 +1,13 @@
 import { useRef, useEffect } from "react";
 import { ConversationRow, type ConversationRowProps } from "./ConversationRow";
 
-export const ConversationContainer = (
-  conversationRows: Array<ConversationRowProps>
-): JSX.Element => {
+export type ConversationContainerProps = {
+  rows: Array<ConversationRowProps>;
+};
+
+export const ConversationContainer = ({
+  rows,
+}: ConversationContainerProps): JSX.Element => {
   const containerRef = useRef<HTMLDivElement>(null);
   useEffect(() => {
     if (containerRef.current) {
@@ -12,8 +16,8 @@ export const ConversationContainer = (
         behavior: "smooth",
       });
     }
-  }, [containerRef, conversationRows]);
-  console.log("conversationRows inner update", conversationRows);
+  }, [containerRef, rows]);
+
   return (
     <div className="container relative flex w-full flex-col items-center justify-center gap-12 px-2 py-2">
       <div
@@ -21,14 +25,13 @@ export const ConversationContainer = (
       text-white"
         ref={containerRef}
       >
-        {conversationRows &&
-          conversationRows.map((conversationRow, idx): JSX.Element => {
+        {rows &&
+          rows.map((conversationRow, idx): JSX.Element => {
             // This compound key will force a re-render when any of the props change
             const key =
               idx +
               (conversationRow.incomingUserText || "") +
-              (conversationRow.incomingBotText || "") +
-              (conversationRow.incomingUserTextComplete || false);
+              (conversationRow.incomingBotText || "");
             return (
               <div key={idx} className="snap-center snap-always">
                 <ConversationRow {...conversationRow} key={key} />

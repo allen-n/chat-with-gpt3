@@ -38,12 +38,6 @@ export const ConversationRow = ({
   incomingBotText,
   incomingUserTextComplete = false,
 }: ConversationRowProps): JSX.Element => {
-  console.log(
-    "convoRow current state",
-    incomingBotText,
-    incomingUserText,
-    incomingUserTextComplete
-  );
   return (
     <div className="container relative flex flex-col items-center justify-center gap-12 px-2 py-1 ">
       <div
