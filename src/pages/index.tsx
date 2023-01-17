@@ -1,16 +1,23 @@
 import { type NextPage } from "next";
 import Script from "next/script";
+import { useSession } from "next-auth/react";
 import { useState, useRef } from "react";
 import Head from "next/head";
-import { Toaster } from "react-hot-toast";
+import { Toaster, toast } from "react-hot-toast";
 import { HomeScreen } from "../components/HomeScreen";
 import stringhash from "string-hash";
 import { trpc } from "../utils/trpc";
 
 const Home: NextPage = () => {
+  const { status: sessionStatus } = useSession();
+
+  const isLoggedIn = (status: string): boolean => {
+    return status === "authenticated";
+  };
   const [password, setPassword] = useState("");
   const inputRef = useRef<HTMLInputElement>(null);
   const passwordSuccess = trpc.auth.checkPassword.useQuery({ text: password });
+  // TODO allen re-enable
 
   /**
    * Component source: https://tailwindcomponents.com/component/login-page-16
@@ -37,12 +44,20 @@ const Home: NextPage = () => {
           </div>
         </div>
         <div className="flex flex-col items-center">
-          <input
-            className="my-2 w-72 border p-2"
-            type="password"
-            placeholder="Password Please 🙏"
-            ref={inputRef}
-          />
+          <form
+            action="none"
+            onSubmit={(e) => {
+              e.preventDefault();
+              setPassword(stringhash(inputRef.current?.value || "").toString());
+            }}
+          >
+            <input
+              className="my-2 w-72 border p-2"
+              type="password"
+              placeholder="Password Please 🙏"
+              ref={inputRef}
+            />
+          </form>
         </div>
         <div className="my-2 flex justify-center">
           <button
@@ -69,9 +84,15 @@ const Home: NextPage = () => {
         <link rel="icon" href="/favicon.ico" />
         <Script src="https://rsms.me/inter/inter.css" />
       </Head>
-      <main className="flex min-h-screen flex-col items-center justify-center bg-gradient-to-b from-[#2e026d] to-[#15162c]">
-        {!passwordSuccess.data?.passwordValid && <PasswordInput />}
-        {passwordSuccess.data?.passwordValid && <HomeScreen />}
+      <main className="flex min-h-screen flex-col items-center justify-center overflow-y-hidden bg-gradient-to-b from-[#2e026d] to-[#15162c]">
+        {/* TODO allen fixme before pushing to prod - model loader works, maybe hide behind auth? */}
+        {/* <HomeScreen /> */}
+        {!passwordSuccess.data?.passwordValid && !isLoggedIn(sessionStatus) && (
+          <PasswordInput />
+        )}
+        {(passwordSuccess.data?.passwordValid || isLoggedIn(sessionStatus)) && (
+          <HomeScreen />
+        )}
         <Toaster position="bottom-left" />
       </main>
     </>
