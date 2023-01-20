@@ -50,7 +50,7 @@ const asrClient: speechToText.SpeechClient = new speechToText.SpeechClient({
   },
 });
 
-// TODO allen: https://cloud.google.com/nodejs/docs/reference/google-auth-library/latest
+// TODO @allen-n: https://cloud.google.com/nodejs/docs/reference/google-auth-library/latest
 const generateSpeech = async (
   text: string,
   ttsClient: textToSpeech.TextToSpeechClient
@@ -75,9 +75,13 @@ const generateSpeech = async (
 };
 
 const generateText = async (audioBase64: string): Promise<string> => {
+  // https://cloud.google.com/speech-to-text/docs/reference/rest/v1/RecognitionConfig
   const config = {
     encoding: "WEBM_OPUS",
     languageCode: "en-US",
+    enableSpokenPunctuation: { value: true },
+    enableAutomaticPunctuation: true,
+    maxAlternatives: 1, // We'll always grab the first alternative anyways
   };
   audioBase64 = cleanBase64String(audioBase64);
   const request = {
@@ -99,8 +103,9 @@ const CompletionRequest = async (prompt: string) => {
   // TODO allen: will need to prompt engineer a bit to keep context of the conversation
   try {
     const completion = await openai.createCompletion({
-      model: "text-curie-001", // "text-davinci-003", higher quality, lower speed, but 10x the price, text-curie-001 is cheaper and faster
-      prompt: `The following is a conversation with an AI assistant. The assistant is helpful, creative, clever, and very friendly.\n\nHuman: ${prompt}?\nAI: `,
+      // model: "text-curie-001", // lower quality, faster, but 1/10 the price, text-davinci-003 is better
+      model: "text-davinci-003", // higher quality, lower speed, but 10x the price, text-curie-001 is cheaper and faster
+      prompt: `The following is a conversation with an AI assistant. The assistant is helpful, creative, clever, very friendly, and generally tries to answer questions succinctly.\n\nHuman: ${prompt}?\nAI: `,
       temperature: 0.9,
       max_tokens: 150,
       top_p: 1,
