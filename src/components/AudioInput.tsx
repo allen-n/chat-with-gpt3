@@ -13,7 +13,7 @@ export const AudioInput = (): JSX.Element => {
   const recordingTimeSlice = 2000;
   const audioBitRate = 16000;
   const loudnessThreshold = 0.05;
-  const maxSilentTicks = 10;
+  const maxSilentTicks = 9;
 
   // Media state hooks
   const [isRecording, setIsRecording] = useState<boolean>(false);
@@ -167,7 +167,7 @@ export const AudioInput = (): JSX.Element => {
   const clearEmptyConversationRows = () => {
     if (conversationRows) {
       const rows = [...conversationRows.rows];
-      const newRows = rows.filter((row) => row.incomingUserText);
+      const newRows = rows.filter((row) => row.incomingUserTextComplete);
 
       setConversationRows({ rows: newRows });
     }
@@ -177,6 +177,12 @@ export const AudioInput = (): JSX.Element => {
     if (conversationRows) {
       const rows = [...conversationRows.rows];
       rows.push({ incomingUserText: "", incomingUserTextComplete: false });
+
+      setConversationRows({ rows: rows });
+    } else {
+      let rows: ConversationRowProps[] = [
+        { incomingUserText: "", incomingUserTextComplete: false },
+      ];
 
       setConversationRows({ rows: rows });
     }
@@ -194,6 +200,7 @@ export const AudioInput = (): JSX.Element => {
       setTextToSpeechResponse("");
       setUserTextComplete(false);
       setFullResponse(undefined);
+      setAudioChunks([]);
 
       // Start recording
       setIsRecording(true);
@@ -251,39 +258,49 @@ export const AudioInput = (): JSX.Element => {
             `Pushed ${e.data.size} bytes of audio data. RMS=${rms}`
           );
 
-          const blob = new Blob(chunks, {
-            type: "audio/ogg; codecs=opus",
-          });
-          const b64string = await blobToBase64(blob);
           setAudioChunks(chunks);
-          userASRQuery.mutate({
-            req: {
-              returnType: "speechToText",
-              index: b64string.length,
-              b64FileString: b64string,
-            },
-          });
+
+          // NOTE: Disabling as-you-speak ASR for now
+          // if (chunks.length > 1) {
+          //   const blob = new Blob(chunks, {
+          //     type: "audio/ogg; codecs=opus",
+          //   });
+          //   const b64string = await blobToBase64(blob);
+          //   userASRQuery.mutate({
+          //     req: {
+          //       returnType: "speechToText",
+          //       index: b64string.length,
+          //       b64FileString: b64string,
+          //     },
+          //   });
+          // }
         };
 
         // Callback when the stream is stopped
         mediaRecorder.onstop = async (e) => {
           clearInterval(intervalID); // Stop checking the volume
-          setUserTextComplete(true); // Show loading indicator for robot text
-          const blob = new Blob(audioChunks, {
-            type: "audio/ogg; codecs=opus",
-          });
-          const size = audioChunks.reduce((acc, chunk) => acc + chunk.size, 0);
-          console.debug(`Audio size: ${size / 1000}kb`);
-          const b64string = await blobToBase64(blob);
+          // If we actually have audio, try to run
+          if (audioChunks.length > 1) {
+            setUserTextComplete(true); // Show loading indicator for robot text
+            const blob = new Blob(audioChunks, {
+              type: "audio/ogg; codecs=opus",
+            });
+            const size = audioChunks.reduce(
+              (acc, chunk) => acc + chunk.size,
+              0
+            );
+            console.debug(`Audio size: ${size / 1000}kb`);
+            const b64string = await blobToBase64(blob);
 
-          userASRQuery.mutate({
-            req: {
-              returnType: "speechToText",
-              index: b64string.length,
-              b64FileString: b64string,
-            },
-          });
-          setShouldSendCompletionRequest(true);
+            userASRQuery.mutate({
+              req: {
+                returnType: "speechToText",
+                index: b64string.length,
+                b64FileString: b64string,
+              },
+            });
+            setShouldSendCompletionRequest(true);
+          }
         };
 
         mediaRecorder.start(recordingTimeSlice);
