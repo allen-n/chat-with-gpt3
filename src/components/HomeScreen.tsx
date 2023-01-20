@@ -43,7 +43,7 @@ export const HomeScreen = (): JSX.Element => {
       <h1 className="text-5xl font-extrabold tracking-tight text-white sm:text-[5rem]">
         Chat <span className="text-[hsl(280,100%,70%)]">With</span> GPT3
       </h1>
-      <div id="full-w-div" className="grid w-auto grid-cols-1 gap-y-4">
+      <div id="full-w-div" className="flex w-full max-w-3xl flex-col gap-y-4">
         <div
           className="flex  flex-col gap-4 rounded-xl bg-white/10 p-4
         text-white hover:bg-white/20"
@@ -54,7 +54,7 @@ export const HomeScreen = (): JSX.Element => {
             and let the machine do the rest.
           </div>
         </div>
-        <div className="text-md w-fit justify-self-center rounded-xl bg-white/10 p-3 text-center text-white">
+        <div className="text-md w-full justify-self-center rounded-xl bg-white/10 p-3 text-center text-white">
           {isLoggedIn(sessionStatus) ? (
             <AudioInput />
           ) : (
