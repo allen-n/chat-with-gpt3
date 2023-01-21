@@ -1,6 +1,10 @@
 import { z } from "zod";
 import { router, protectedProcedure } from "../trpc";
-import { buffToBase64, cleanBase64String } from "../../../utils/encoding";
+import {
+  buffToBase64,
+  cleanBase64String,
+  base64ToBlob,
+} from "../../../utils/encoding";
 import { Configuration, OpenAIApi } from "openai";
 import * as textToSpeech from "@google-cloud/text-to-speech";
 import * as speechToText from "@google-cloud/speech";
@@ -19,7 +23,6 @@ export const SpeechToTextModelResp = z.object({
 
 export const SpeechToTextRequest = z.object({
   b64FileString: z.string(),
-  index: z.number().nullable(),
   returnType: z.enum(["speechToText", "speechToAudioResponse"]).nullish(),
 });
 
@@ -71,6 +74,10 @@ const generateSpeech = async (
   // The type here is a bit weird, but it's correct
   //@ts-ignore
   const [response] = await ttsClient.synthesizeSpeech(request);
+
+  const resp =
+    response as textToSpeech.protos.google.cloud.texttospeech.v1.ISynthesizeSpeechResponse;
+
   return response.audioContent as Buffer;
 };
 
@@ -92,8 +99,13 @@ const generateText = async (audioBase64: string): Promise<string> => {
   // The type here is a bit weird, but it's correct
   // @ts-ignore
   const [response] = await asrClient.recognize(request);
+  const resp =
+    response as speechToText.protos.google.cloud.speech.v1.RecognizeResponse;
 
-  const transcription = response.results
+  // TODO @allen-n log this billed time
+  const billedTime = resp.totalBilledTime;
+  // Now send the transcription
+  const transcription = resp.results
     .map((result: any) => result.alternatives[0].transcript)
     .join("\n");
   return transcription;
@@ -123,13 +135,17 @@ const CompletionRequest = async (prompt: string) => {
 export const speechRouter = router({
   asr: protectedProcedure
     .input(z.object({ req: SpeechToTextRequest }))
-    .mutation(async ({ input }) => {
+    .mutation(async ({ input, ctx }) => {
       const result = await generateText(input?.req.b64FileString);
+
       const resp: SpeechToTextModelResp = {
         text: result,
         error: null,
         estimated_time: 0,
       };
+      const prisma = ctx.prisma;
+
+      const userId = ctx.session.user.id;
       return resp;
     }),
 

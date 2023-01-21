@@ -26,7 +26,7 @@ export const buffToBase64 = (buff: Buffer): string => {
 /**
  * Convert base64 encoded string to a blob
  * @param base64data
- * @param contentType
+ * @param contentType, defaults to "audio/ogg; codecs=opus"
  * @returns
  */
 export const base64ToBlob = (
@@ -37,6 +37,7 @@ export const base64ToBlob = (
     base64data.replace(`data:${contentType};base64,`, ""),
     "base64"
   );
+
   const blob = new Blob([buff], {
     type: `${contentType}}`,
   });

@@ -7,6 +7,7 @@ import toast from "react-hot-toast";
 import { trpc } from "../utils/trpc";
 import { blobToBase64, base64ToBlob, getAudioRMS } from "../utils/encoding";
 import { SpeechToTextResponse } from "../server/trpc/router/speech";
+import getBlobDuration from "get-blob-duration";
 
 export const AudioInput = (): JSX.Element => {
   // Constants
@@ -266,10 +267,10 @@ export const AudioInput = (): JSX.Element => {
           //     type: "audio/ogg; codecs=opus",
           //   });
           //   const b64string = await blobToBase64(blob);
+          //   const duration = await getBlobDuration(blob);
           //   userASRQuery.mutate({
           //     req: {
           //       returnType: "speechToText",
-          //       index: b64string.length,
           //       b64FileString: b64string,
           //     },
           //   });
@@ -291,11 +292,11 @@ export const AudioInput = (): JSX.Element => {
             );
             console.debug(`Audio size: ${size / 1000}kb`);
             const b64string = await blobToBase64(blob);
+            const duration = await getBlobDuration(blob);
 
             userASRQuery.mutate({
               req: {
                 returnType: "speechToText",
-                index: b64string.length,
                 b64FileString: b64string,
               },
             });

@@ -26,6 +26,7 @@
     "@trpc/react-query": "^10.0.0",
     "@trpc/server": "^10.0.0",
     "framer-motion": "^8.0.2",
+    "get-blob-duration": "^1.2.0",
     "next": "13.0.2",
     "next-auth": "^4.18.3",
     "openai": "^3.1.0",
