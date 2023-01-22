@@ -39,7 +39,6 @@ export type SpeechToTextModelResp = z.infer<typeof SpeechToTextModelResp>;
 export interface BillableAPI {
   apiPath: string;
   apiVersion: string;
-  billingUnit: "duration" | "size" | "tokens";
 }
 
 // Utility functions return types (todo @allen-n: move to utils)
@@ -141,7 +140,6 @@ const generateSpeech = async (
     buffer: buff,
     billableSize: billableSize,
     apiPath: textToSpeech.v1.TextToSpeechClient.servicePath,
-    billingUnit: "size",
     apiVersion: "v1",
   };
 };
@@ -185,7 +183,6 @@ const generateText = async (audioBase64: string): Promise<GeneratedText> => {
     text: transcription,
     billableTime: billedTime || undefined,
     apiPath: speechToText.v1.SpeechClient.servicePath,
-    billingUnit: "duration",
     apiVersion: "v1",
   };
 };
@@ -207,7 +204,6 @@ const CompletionRequest = async (prompt: string) => {
     const completionResp: GeneratedCompletion = {
       data: completion.data,
       apiPath: completion.config.url || "Missing API Path",
-      billingUnit: "tokens",
       apiVersion: "v1",
     };
     return completionResp;
