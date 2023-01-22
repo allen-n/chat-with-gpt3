@@ -224,9 +224,26 @@ export const speechRouter = router({
         error: null,
         estimated_time: 0,
       };
-      const prisma = ctx.prisma;
 
-      const userId = ctx.session.user.id;
+      const prisma = ctx.prisma;
+      const res = await prisma.googleASRRequest.create({
+        data: {
+          userId: ctx.session.user.id,
+          apiPath: result.apiPath,
+          apiVersion: result.apiVersion,
+          billableTimeSeconds: Number(result.billableTime.seconds || 0),
+          billableTimeNanos: Number(result.billableTime.nanos || 0),
+        },
+      });
+      if (res.id) {
+        console.info(
+          `Created Google ASR Request {id: ${res.id}} for user ${ctx.session.user.id}`
+        );
+      } else {
+        console.error(
+          `Failed to create Google ASR Request for user ${ctx.session.user.id}`
+        );
+      }
       return resp;
     }),
 

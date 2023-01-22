@@ -83,8 +83,6 @@ model GoogleASRRequest {
   user                User     @relation(fields: [userId], references: [id], onDelete: Cascade)
   apiPath             String
   apiVersion          String
-  prompt              String
-  response            String
   billableTimeSeconds Int
   billableTimeNanos   Int?
 }
@@ -96,7 +94,5 @@ model GoogleTTSRequest {
   user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
   apiPath      String
   apiVersion   String
-  prompt       String
-  response     String
   billableSize Int
 }
