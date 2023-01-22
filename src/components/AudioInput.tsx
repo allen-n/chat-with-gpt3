@@ -14,7 +14,8 @@ export const AudioInput = (): JSX.Element => {
   const recordingTimeSlice = 2000;
   const audioBitRate = 16000;
   const loudnessThreshold = 0.05;
-  const maxSilentTicks = 9;
+  const maxSilentTicks = 8; // total number of ticks to wait for speech
+  const ticksWIthoutSpeechInterval = 200; // ms to wait between ticks checking for speech
 
   // Media state hooks
   const [isRecording, setIsRecording] = useState<boolean>(false);
@@ -248,7 +249,7 @@ export const AudioInput = (): JSX.Element => {
           } else {
             setTicksWithoutSpeech(0);
           }
-        }, 200);
+        }, ticksWIthoutSpeechInterval);
 
         // Callback on the `recordingTimeSlice` interval
         mediaRecorder.ondataavailable = async (e) => {
