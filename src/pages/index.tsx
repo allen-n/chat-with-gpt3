@@ -81,7 +81,7 @@ const Home: NextPage = () => {
         <meta property="og:title" content="Voice Chat with GPT-3" />
         <meta
           property="og:description"
-          content="Chat with your friendly neighborhood AI overlord - *ehm* AI assistant - with just your voice!"
+          content="Chat with your friendly neighborhood AI, with just your voice!"
         />
         <meta
           property="og:image"
@@ -91,8 +91,24 @@ const Home: NextPage = () => {
         <meta
           property="description"
           name="description"
-          content="Chat with your friendly neighborhood AI overlord - *ehm* AI assistant - with just your voice!"
+          content="Chat with your friendly neighborhood AI, with just your voice!"
         />
+        <meta
+          property="twitter:card"
+          name="twitter:card"
+          content="summary"
+        ></meta>
+        <meta
+          property="twitter:site"
+          name="twitter:site"
+          content="@nikka_allen"
+        ></meta>
+        <meta
+          property="twitter:title"
+          name="twitter:title"
+          content="Voice Chat with GPT-3 🗣️ 🤖"
+        ></meta>
+
         <link rel="icon" href="/favicon.ico" />
         <Script src="https://rsms.me/inter/inter.css" />
       </Head>
