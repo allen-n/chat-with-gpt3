@@ -10,7 +10,4 @@ export const exampleRouter = router({
         greeting: `Loading backend... ${input?.text ?? ""}`,
       };
     }),
-  getAll: publicProcedure.query(({ ctx }) => {
-    return ctx.prisma.example.findMany();
-  }),
 });

@@ -41,18 +41,18 @@ export const ConversationRow = ({
   return (
     <div className="container relative flex flex-col items-center justify-center gap-12 px-2 py-1 ">
       <div
-        className="flex w-full flex-col gap-2 rounded-xl bg-white/10 p-4
+        className="flex w-full flex-col gap-2 
       text-white"
       >
         <div className="flex justify-end">
-          <div className="ml-8 w-fit max-w-xs rounded-md bg-[#1d2d99] py-1 px-2">
+          <div className="ml-10 w-fit max-w-md rounded-md bg-[#1d2d99] py-1 px-2 text-right">
             {incomingUserText && incomingUserText}
             {!incomingUserText && <LoadingSpinner />}
           </div>
         </div>
         {incomingUserTextComplete && (
           <div className="flex flex-row items-center justify-start">
-            <div className="ml-2 mr-8 w-fit max-w-xs rounded-md bg-[#198814] py-1 px-2">
+            <div className="mr-8 w-fit max-w-md rounded-md bg-[#198814] py-1 px-2 text-left">
               {incomingBotText && incomingBotText}
               {!incomingBotText && <LoadingSpinner />}
             </div>

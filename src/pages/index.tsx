@@ -3,13 +3,15 @@ import Script from "next/script";
 import { useSession } from "next-auth/react";
 import { useState, useRef } from "react";
 import Head from "next/head";
-import { Toaster, toast } from "react-hot-toast";
+import { Toaster } from "react-hot-toast";
 import { HomeScreen } from "../components/HomeScreen";
 import stringhash from "string-hash";
 import { trpc } from "../utils/trpc";
 
+import { OveruseModal } from "../components/OveruseModal";
+
 const Home: NextPage = () => {
-  const { status: sessionStatus } = useSession();
+  const { status: sessionStatus, data: sessionData } = useSession();
 
   const isLoggedIn = (status: string): boolean => {
     return status === "authenticated";
@@ -17,13 +19,29 @@ const Home: NextPage = () => {
   const [password, setPassword] = useState("");
   const inputRef = useRef<HTMLInputElement>(null);
   const passwordSuccess = trpc.auth.checkPassword.useQuery({ text: password });
+  const apiUsage = trpc.billing.getUsage.useQuery(
+    {
+      // TODO @allen-n: consider adding date filters on the FE
+      req: {},
+    },
+    {
+      enabled: sessionData?.user !== undefined,
+      staleTime: 3600000 * 2, // 2 hours in ms
+      cacheTime: 3600000 * 2, // 2 hours in ms
+    }
+  );
+  const subscriptionStatus = trpc.billing.getSubscription.useQuery(undefined, {
+    enabled: sessionData?.user !== undefined,
+    staleTime: 3600000 * 0.5, // 30m in ms
+    cacheTime: 3600000 * 0.5, // 30m in ms
+  });
   // TODO allen re-enable
 
   /**
    * Component source: https://tailwindcomponents.com/component/login-page-16
    * @returns JSX.Element
    */
-  const PasswordInput = (): JSX.Element => {
+  const PasswordModal = (): JSX.Element => {
     return (
       <div className="mx-auto my-36 flex h-auto w-[350px] flex-col rounded-md border-2 bg-white py-10 text-black shadow-xl">
         <div className="mx-8 mt-7 mb-1 flex flex-row justify-start space-x-2">
@@ -73,26 +91,80 @@ const Home: NextPage = () => {
     );
   };
 
+  const determineOveruseModal = (): JSX.Element => {
+    // TODO @allen-n: Make the limit higher than 10c ?
+    if (apiUsage.data?.totalBillable && apiUsage.data?.totalBillable > 0.1) {
+      if (subscriptionStatus.data?.isSubscribed) {
+        return <HomeScreen />;
+      } else {
+        return <OveruseModal usageAmount={apiUsage.data?.totalBillable} />;
+      }
+    }
+    return <HomeScreen />;
+  };
+
+  const determinePasswordModal = (): JSX.Element => {
+    // NOTE: Disabling password modal for now, since  we're tracking usage
+    // if (!passwordSuccess.data?.passwordValid && !isLoggedIn(sessionStatus)) {
+    //   return <PasswordModal />;
+    // }
+    // if (passwordSuccess.data?.passwordValid || isLoggedIn(sessionStatus)) {
+    //   return determineOveruseModal();
+    // }
+    return determineOveruseModal();
+  };
+
   return (
     <>
       <Head>
         <title>Chat With 🤖</title>
+
+        <meta property="og:title" content="Voice Chat with GPT-3" />
         <meta
-          name="description"
-          content="Chat with your friendly neighborhood AI"
+          property="og:description"
+          content="Chat with your friendly neighborhood AI, with just your voice!"
         />
+        <meta
+          property="og:image"
+          content="https://xuhpdfsfmyeayusstakp.supabase.co/storage/v1/object/public/public-images/android-chrome-512x512.png"
+        />
+
+        <meta
+          property="description"
+          name="description"
+          content="Chat with your friendly neighborhood AI, with just your voice!"
+        />
+        <meta
+          property="twitter:card"
+          name="twitter:card"
+          content="summary"
+        ></meta>
+        <meta
+          property="twitter:site"
+          name="twitter:site"
+          content="@nikka_allen"
+        ></meta>
+        <meta
+          property="twitter:title"
+          name="twitter:title"
+          content="Voice Chat with GPT-3 🗣️ 🤖"
+        ></meta>
+        <meta
+          property="twitter:description"
+          name="twitter:description"
+          content="Chat with your friendly neighborhood AI, with just your voice!"
+        ></meta>
+        <meta
+          property="twitter:image"
+          name="twitter:image"
+          content="https://xuhpdfsfmyeayusstakp.supabase.co/storage/v1/object/public/public-images/android-chrome-512x512.png"
+        ></meta>
+
         <link rel="icon" href="/favicon.ico" />
         <Script src="https://rsms.me/inter/inter.css" />
       </Head>
-      <main className="flex min-h-screen flex-col items-center justify-center overflow-y-hidden bg-gradient-to-b from-[#2e026d] to-[#15162c]">
-        {/* TODO allen fixme before pushing to prod - model loader works, maybe hide behind auth? */}
-        {/* <HomeScreen /> */}
-        {!passwordSuccess.data?.passwordValid && !isLoggedIn(sessionStatus) && (
-          <PasswordInput />
-        )}
-        {(passwordSuccess.data?.passwordValid || isLoggedIn(sessionStatus)) && (
-          <HomeScreen />
-        )}
+      <main className="relative z-0 flex min-h-screen flex-col items-center justify-center overflow-y-hidden bg-gradient-to-b from-[#2e026d] to-[#15162c]">
+        {determinePasswordModal()}
         <Toaster position="bottom-left" />
       </main>
     </>
