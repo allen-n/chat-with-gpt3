@@ -53,6 +53,16 @@ model User {
   openaiCompletionRequest OpenaiCompletionRequest[]
   googleAsrRequest        GoogleASRRequest[]
   googleTtsRequest        GoogleTTSRequest[]
+  userSubscription        UserSubscription?
+}
+
+model UserSubscription {
+  id           String  @id @default(cuid())
+  userId       String  @unique
+  user         User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+  stripeId     String? @unique
+  status       String
+  isSubscribed Boolean
 }
 
 model VerificationToken {
@@ -95,4 +105,5 @@ model GoogleTTSRequest {
   apiPath      String
   apiVersion   String
   billableSize Int
+  modelName    String   @default("not_specified")
 }

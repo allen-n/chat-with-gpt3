@@ -1,15 +1,14 @@
 import { z } from "zod";
-import { buffToBase64 } from "../../../utils/encoding";
 import { router, protectedProcedure } from "../trpc";
-import {
-  SpeechToTextRequest,
-  generateText,
-  generateCompletion,
-  SpeechToTextResponse,
-  generateSpeech,
-  type SpeechToTextModelResp,
-} from "../../../utils/speech";
-export const speechRouter = router({
+import { buffToBase64, cleanBase64String } from "../../../utils/encoding";
+
+export const UsageRequest = z.object({
+  startTime: z.date().nullish(),
+  endTime: z.date().nullish(),
+  apis: z.array(z.enum(["asr", "tts", "llm"])).nullish(),
+});
+
+export const billingRouter = router({
   asr: protectedProcedure
     .input(z.object({ req: SpeechToTextRequest }))
     .mutation(async ({ input, ctx }) => {
@@ -48,7 +47,7 @@ export const speechRouter = router({
     .mutation(async ({ input, ctx }) => {
       if (input) {
         const prisma = ctx.prisma;
-        const completion = await generateCompletion(
+        const completion = await CompletionRequest(
           input?.resp.textModelResp.text
         );
         if (completion) {
