@@ -6,7 +6,7 @@ import toast from "react-hot-toast";
 
 import { trpc } from "../utils/trpc";
 import { blobToBase64, base64ToBlob, getAudioRMS } from "../utils/encoding";
-import { SpeechToTextResponse } from "../server/trpc/router/speech";
+import { type SpeechToTextResponse } from "../utils/speech";
 import getBlobDuration from "get-blob-duration";
 
 export const AudioInput = (): JSX.Element => {

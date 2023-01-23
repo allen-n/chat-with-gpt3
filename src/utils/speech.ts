@@ -57,7 +57,7 @@ export type GeneratedCompletion = {
   data: CreateCompletionResponse;
 } & BillableAPI;
 
-const ttsClient: textToSpeech.TextToSpeechClient =
+export const ttsClient: textToSpeech.TextToSpeechClient =
   new textToSpeech.TextToSpeechClient({
     credentials: {
       client_email: googleKeys.client_email,
@@ -196,11 +196,11 @@ export const generateText = async (
  * @returns
  */
 export const generateCompletion = async (prompt: string) => {
-  // TODO allen: will need to prompt engineer a bit to keep context of the conversation
+  // TODO @allen-n: will need to prompt engineer a bit to keep context of the conversation
   try {
     const completion = await openai.createCompletion({
-      // model: "text-curie-001", // lower quality, faster, but 1/10 the price, text-davinci-003 is better
-      model: "text-davinci-003", // higher quality, lower speed, but 10x the price, text-curie-001 is cheaper and faster
+      // Models Info, including token limits: https://beta.openai.com/docs/models/gpt-3
+      model: "text-davinci-003", // 4000 token limit
       prompt: `The following is a conversation with an AI assistant. The assistant is helpful, creative, clever, very friendly, and generally tries to answer questions succinctly.\n\nHuman: ${prompt}?\nAI: `,
       temperature: 0.9,
       max_tokens: 150,

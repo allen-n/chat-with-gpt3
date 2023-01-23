@@ -7,6 +7,7 @@ import {
   generateCompletion,
   SpeechToTextResponse,
   generateSpeech,
+  ttsClient,
   type SpeechToTextModelResp,
 } from "../../../utils/speech";
 export const speechRouter = router({

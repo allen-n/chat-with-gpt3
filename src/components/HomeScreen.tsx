@@ -1,9 +1,7 @@
 import { useSession } from "next-auth/react";
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { AudioInput } from "../components/AudioInput";
 import { SignIn } from "./SignIn";
-import { ConversationRow, ConversationRowProps } from "./ConversationRow";
-import { ConversationContainer } from "./ConversationContainer";
 
 import { trpc } from "../utils/trpc";
 
@@ -15,28 +13,9 @@ export const HomeScreen = (): JSX.Element => {
     return status === "authenticated";
   };
 
-  const [currentUserText, setCurrentUserText] = useState<string>("");
-  const [currentBotText, setCurrentBotText] = useState<string>("");
-  const [conversationRows, setConversationRows] = useState<
-    Array<ConversationRowProps>
-  >([{}]);
-  const [userTextComplete, setUserTextComplete] = useState<boolean>(false);
-
-  useEffect(() => {
-    let rows: ConversationRowProps[] = [];
-    for (let index = 0; index < 6; index++) {
-      rows.push({
-        incomingUserText: currentUserText,
-        incomingBotText: currentBotText,
-        incomingUserTextComplete: userTextComplete,
-      });
-    }
-    setConversationRows(rows);
-  }, [currentBotText, currentUserText]);
-
   return (
     <div className="container flex flex-col items-center justify-center gap-12 px-4 py-16 ">
-      <div className="fixed right-5 top-5">
+      <div className="absolute right-5 top-5">
         <SignIn />
       </div>
 
