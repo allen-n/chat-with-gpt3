@@ -77,9 +77,21 @@ const Home: NextPage = () => {
     <>
       <Head>
         <title>Chat With 🤖</title>
+
+        <meta property="og:title" content="Voice Chat with GPT-3" />
         <meta
+          property="og:description"
+          content="Chat with your friendly neighborhood AI overlord - *ehm* AI assistant - with just your voice!"
+        />
+        <meta
+          property="og:image"
+          content="https://xuhpdfsfmyeayusstakp.supabase.co/storage/v1/object/public/public-images/android-chrome-512x512.png"
+        />
+
+        <meta
+          property="description"
           name="description"
-          content="Chat with your friendly neighborhood AI"
+          content="Chat with your friendly neighborhood AI overlord - *ehm* AI assistant - with just your voice!"
         />
         <link rel="icon" href="/favicon.ico" />
         <Script src="https://rsms.me/inter/inter.css" />
