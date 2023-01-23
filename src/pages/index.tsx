@@ -108,6 +108,16 @@ const Home: NextPage = () => {
           name="twitter:title"
           content="Voice Chat with GPT-3 🗣️ 🤖"
         ></meta>
+        <meta
+          property="twitter:description"
+          name="twitter:description"
+          content="Chat with your friendly neighborhood AI, with just your voice!"
+        ></meta>
+        <meta
+          property="twitter:image"
+          name="twitter:image"
+          content="https://xuhpdfsfmyeayusstakp.supabase.co/storage/v1/object/public/public-images/android-chrome-512x512.png"
+        ></meta>
 
         <link rel="icon" href="/favicon.ico" />
         <Script src="https://rsms.me/inter/inter.css" />
