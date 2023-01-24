@@ -7,7 +7,6 @@ import toast from "react-hot-toast";
 import { trpc } from "../utils/trpc";
 import { blobToBase64, base64ToBlob, getAudioRMS } from "../utils/encoding";
 import { type SpeechToTextResponse } from "../utils/speech";
-import getBlobDuration from "get-blob-duration";
 
 export const AudioInput = (): JSX.Element => {
   // Constants
@@ -293,7 +292,6 @@ export const AudioInput = (): JSX.Element => {
             );
             console.debug(`Audio size: ${size / 1000}kb`);
             const b64string = await blobToBase64(blob);
-            const duration = await getBlobDuration(blob);
 
             userASRQuery.mutate({
               req: {
