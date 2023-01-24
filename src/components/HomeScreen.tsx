@@ -27,6 +27,7 @@ export const HomeScreen = (): JSX.Element => {
 
   const shouldDisplayOveruseModal = (): boolean => {
     // TODO @allen-n: Make the limit higher than 10c ?
+
     if (apiUsage.data?.totalBillable && apiUsage.data?.totalBillable > 0.1) {
       if (subscriptionStatus.data?.isSubscribed) {
         return false;
@@ -46,7 +47,6 @@ export const HomeScreen = (): JSX.Element => {
       <div className="absolute right-5 top-5">
         <SignIn />
       </div>
-
       <h1 className="text-5xl font-extrabold tracking-tight text-white sm:text-[5rem]">
         Chat <span className="text-[hsl(280,100%,70%)]">With</span> GPT3
       </h1>
