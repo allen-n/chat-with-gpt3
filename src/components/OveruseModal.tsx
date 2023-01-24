@@ -11,7 +11,7 @@ export const OveruseModal = ({
 }: OveruseModalProps): JSX.Element => {
   const useAmount = (usageAmount || 0).toPrecision(2);
   return (
-    <div className="mx-auto my-36 flex h-auto w-[350px] flex-col rounded-md border-2 bg-white py-10 text-black shadow-xl">
+    <div className="mx-auto my-36 flex h-auto w-[50%] flex-col rounded-md border-2 bg-white py-10 text-black shadow-xl">
       <div className="mx-8 mt-7 mb-1 flex flex-row justify-start space-x-2">
         <div className="h-7 w-3 bg-[#CC66FF]"></div>
         <div className=" grid grid-cols-1 text-center font-sans text-xl font-bold">
