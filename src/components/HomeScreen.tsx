@@ -1,17 +1,33 @@
 import { useSession } from "next-auth/react";
+import { useEffect } from "react";
 import { AudioInput } from "../components/AudioInput";
 import { SignIn } from "./SignIn";
 import { OveruseModal } from "./OveruseModal";
+import { posthog } from "posthog-js";
 
 import { trpc } from "../utils/trpc";
 
 export const HomeScreen = (): JSX.Element => {
   const { status: sessionStatus, data: sessionData } = useSession();
+
+  // Identify user when then log in
+  useEffect(() => {
+    console.log("Session state changed! ", sessionData);
+    if (sessionData?.user?.id) {
+      console.log("Identifying user: ", sessionData?.user?.id);
+      posthog.identify(sessionData?.user?.id, {
+        email: sessionData?.user?.email,
+        name: sessionData?.user?.name,
+      });
+    }
+  }, [sessionData?.user?.id]);
+
   const subscriptionStatus = trpc.billing.getSubscription.useQuery(undefined, {
     enabled: sessionData?.user !== undefined,
     staleTime: 600000, // 10m in ms
     cacheTime: 600000, // 10m in ms
   });
+
   const apiUsage = trpc.billing.getUsage.useQuery(
     {
       // TODO @allen-n: consider adding date filters on the FE
@@ -31,6 +47,9 @@ export const HomeScreen = (): JSX.Element => {
       if (subscriptionStatus.data?.isSubscribed) {
         return false;
       } else {
+        posthog.capture("Usage Limit Modal Displayed", {
+          totalBillable: apiUsage.data?.totalBillable,
+        });
         return true;
       }
     }

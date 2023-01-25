@@ -23,7 +23,12 @@ const MyApp: AppType<{ session: Session | null }> = ({
       loaded: (posthog) => {
         // TODO @allen-n: turn off local capture
         // if (process.env.NODE_ENV === "development") posthog.opt_out_capturing();
-        if (session?.user?.id) posthog.identify(session?.user?.id);
+        if (session?.user?.id) {
+          posthog.identify(session?.user?.id, {
+            email: session?.user?.email,
+            name: session?.user?.name,
+          });
+        }
       },
     });
 

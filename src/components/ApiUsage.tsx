@@ -1,5 +1,5 @@
 import { useSession } from "next-auth/react";
-import { useState } from "react";
+import { posthog } from "posthog-js";
 
 import { trpc } from "../utils/trpc";
 
@@ -18,6 +18,9 @@ export const ApiUsage: React.FC = () => {
   );
 
   const refreshUsage = () => {
+    posthog.capture("Usage Refreshed", {
+      usageAmount: apiUsage.data?.totalBillable || 0,
+    });
     apiUsage.refetch();
   };
 
