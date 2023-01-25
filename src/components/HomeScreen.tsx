@@ -6,7 +6,6 @@ import { OveruseModal } from "./OveruseModal";
 import { trpc } from "../utils/trpc";
 
 export const HomeScreen = (): JSX.Element => {
-  const hello = trpc.example.hello.useQuery({ text: " complete!" });
   const { status: sessionStatus, data: sessionData } = useSession();
   const subscriptionStatus = trpc.billing.getSubscription.useQuery(undefined, {
     enabled: sessionData?.user !== undefined,
@@ -78,12 +77,6 @@ export const HomeScreen = (): JSX.Element => {
                 "Sorry, you need to sign in to use this 👆"
               )}
             </div>
-          </div>
-
-          <div className="flex flex-col items-center gap-2">
-            {/* <p className="text-2xl text-white">
-        {hello.data ? hello.data.greeting : ""}
-      </p> */}
           </div>
         </>
       )}
