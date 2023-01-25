@@ -21,8 +21,8 @@ const MyApp: AppType<{ session: Session | null }> = ({
       api_host: "https://app.posthog.com",
       enable_recording_console_log: true,
       loaded: (posthog) => {
-        // Toggle to turn local event capture on and off
-        if (process.env.NODE_ENV === "development") posthog.opt_out_capturing();
+        // Comment this line to turn local event capture on and off, but don't push to prod!
+        if (process.env.NODE_ENV !== "production") posthog.opt_out_capturing();
       },
     });
 
