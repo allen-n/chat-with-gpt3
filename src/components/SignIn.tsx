@@ -3,6 +3,7 @@ import { useState } from "react";
 import { ApiUsage } from "./ApiUsage";
 import { trpc } from "../utils/trpc";
 import { useDetectClickOutside } from "react-detect-click-outside";
+import { posthog } from "posthog-js";
 
 export const SignIn: React.FC = () => {
   const { data: sessionData } = useSession();
@@ -13,10 +14,11 @@ export const SignIn: React.FC = () => {
   );
 
   const settingsButtonString =
-    sessionData?.user === undefined ? "🔑 Sign In" : "⚙️ Settings";
+    sessionData?.user === undefined ? "👋 Get Started!" : "⚙️ Settings";
   const ref = useDetectClickOutside({
     onTriggered: (e: Event) => {
       if ((e.target as HTMLElement).innerHTML !== settingsButtonString) {
+        posthog.capture("User Settings Closed", { closeType: "Click Outside" });
         setShouldBeOpen(false);
       }
     },
@@ -33,13 +35,26 @@ export const SignIn: React.FC = () => {
           <ApiUsage />
           <button
             className="rounded-md bg-white/10 p-1  font-semibold text-white no-underline transition hover:animate-bottom-bounce hover:bg-white/20"
-            onClick={sessionData ? () => signOut() : () => signIn()}
+            onClick={
+              sessionData
+                ? () => {
+                    posthog.capture("User Signed Out");
+                    return signOut();
+                  }
+                : () => {
+                    posthog.capture("User Signed In");
+                    return signIn();
+                  }
+            }
           >
             {sessionData ? "Sign out" : "Sign in"}
           </button>
           <button
             className="rounded-md bg-white/10 p-1  font-semibold text-white no-underline transition hover:animate-bottom-bounce hover:bg-white/20"
             onClick={() => {
+              posthog.capture("User Settings Closed", {
+                closeType: "Button Clicked",
+              });
               setShouldBeOpen(false);
             }}
           >
@@ -51,7 +66,7 @@ export const SignIn: React.FC = () => {
           className="rounded-md bg-white/10 p-1 px-2  font-semibold text-white no-underline transition hover:animate-bottom-bounce hover:bg-white/20"
           onClick={() => {
             setShouldBeOpen(true);
-            console.log("OPENING", shouldBeOpen);
+            posthog.capture("User Settings Opened");
           }}
         >
           {settingsButtonString}

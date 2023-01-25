@@ -1,13 +1,14 @@
-import React, { useRef, useState, useEffect } from "react";
-import { ConversationContainer } from "./ConversationContainer";
-import { ConversationRowProps } from "./ConversationRow";
-import { ConversationContainerProps } from "./ConversationContainer";
+import { posthog } from "posthog-js";
+import React, { useEffect, useRef, useState } from "react";
 import toast from "react-hot-toast";
-
-import { trpc } from "../utils/trpc";
-import { blobToBase64, base64ToBlob, getAudioRMS } from "../utils/encoding";
+import { base64ToBlob, blobToBase64, getAudioRMS } from "../utils/encoding";
 import { type SpeechToTextResponse } from "../utils/speech";
-import getBlobDuration from "get-blob-duration";
+import { trpc } from "../utils/trpc";
+import {
+  ConversationContainer,
+  ConversationContainerProps,
+} from "./ConversationContainer";
+import { ConversationRowProps } from "./ConversationRow";
 
 export const AudioInput = (): JSX.Element => {
   // Constants
@@ -48,6 +49,7 @@ export const AudioInput = (): JSX.Element => {
       if (data.text) {
         console.debug("Setting user text to: ", data.text);
         setCurrentUserText(data.text);
+        posthog.capture("ASR Generated", { length: data.text.length });
       }
     },
   });
@@ -64,6 +66,9 @@ export const AudioInput = (): JSX.Element => {
       }
       if (data?.llmTextResp && data.speechModelResp) {
         setFullResponse(data);
+        posthog.capture("LLM Response Generated", {
+          length: data.llmTextResp.length,
+        });
       }
     },
   });
@@ -73,7 +78,7 @@ export const AudioInput = (): JSX.Element => {
   // Clear audio chunks after user text is complete
   useEffect(() => {
     if (userTextComplete && userASRQuery.isSuccess) {
-      // TODO @allen-n: determine a better way to do this
+      // TODO @allen-n: determine a better way to do this, need to do it to clear the audio chunks without corrupting the query
       setTimeout(() => {
         audioChunks.length = 0;
         setAudioChunks(audioChunks);
@@ -157,6 +162,11 @@ export const AudioInput = (): JSX.Element => {
   useEffect(() => {
     if (ticksWithoutSpeech > maxSilentTicks && isRecording) {
       toast.success("End of speech detected!");
+      posthog.capture("End Of Speech Detected", {
+        userTextLength: currentUserText.length,
+        conversationLength: conversationRows?.rows.length,
+        audioLengthMs: audioChunks.length * recordingTimeSlice,
+      });
       handleMicButtonClick();
       setTicksWithoutSpeech(0);
     }
@@ -192,11 +202,20 @@ export const AudioInput = (): JSX.Element => {
 
   const handleMicButtonClick = () => {
     if (isRecording) {
+      posthog.capture("Voice Input Recording Stopped", {
+        userTextLength: currentUserText.length,
+        conversationLength: conversationRows?.rows.length,
+        audioLengthMs: audioChunks.length * recordingTimeSlice,
+      });
       stopRecoding();
       setIsRecording(false);
       setTextToSpeechResponse(currentUserText);
     } else {
       // Clear state for new data
+      posthog.capture("Voice Input Recording Started", {
+        userTextLength: currentUserText.length,
+        conversationLength: conversationRows?.rows.length,
+      });
       clearEmptyConversationRows();
       setCurrentUserText("");
       setTextToSpeechResponse("");
@@ -293,7 +312,6 @@ export const AudioInput = (): JSX.Element => {
             );
             console.debug(`Audio size: ${size / 1000}kb`);
             const b64string = await blobToBase64(blob);
-            const duration = await getBlobDuration(blob);
 
             userASRQuery.mutate({
               req: {
