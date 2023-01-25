@@ -21,14 +21,8 @@ const MyApp: AppType<{ session: Session | null }> = ({
       api_host: "https://app.posthog.com",
       enable_recording_console_log: true,
       loaded: (posthog) => {
-        // TODO @allen-n: turn off local capture
-        // if (process.env.NODE_ENV === "development") posthog.opt_out_capturing();
-        if (session?.user?.id) {
-          posthog.identify(session?.user?.id, {
-            email: session?.user?.email,
-            name: session?.user?.name,
-          });
-        }
+        // Toggle to turn local event capture on and off
+        if (process.env.NODE_ENV === "development") posthog.opt_out_capturing();
       },
     });
 
