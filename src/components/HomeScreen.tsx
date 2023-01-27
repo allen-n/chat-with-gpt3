@@ -1,14 +1,35 @@
 import { useSession } from "next-auth/react";
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { AudioInput } from "../components/AudioInput";
 import { SignIn } from "./SignIn";
 import { OveruseModal } from "./OveruseModal";
+import { CompatibilityModal } from "./CompatibilityModal";
 import { posthog } from "posthog-js";
 
 import { trpc } from "../utils/trpc";
 
 export const HomeScreen = (): JSX.Element => {
   const { status: sessionStatus, data: sessionData } = useSession();
+  const [micPermissionState, setMicPermissionState] = useState<boolean>(false);
+
+  const checkMicPermissions = async () => {
+    navigator.permissions
+      .query(
+        // @ts-ignore // This still works in chrome, but typescript doesn't like it
+        { name: "microphone" }
+      )
+      .then(function (permissionStatus) {
+        setMicPermissionState(permissionStatus.state === "granted");
+        // console.log(permissionStatus.state); // granted, denied, prompt
+
+        return (permissionStatus.onchange = function () {
+          setMicPermissionState(permissionStatus.state === "granted");
+        });
+      });
+  };
+  useEffect(() => {
+    checkMicPermissions();
+  }, []);
 
   // Identify user when then log in
   useEffect(() => {
@@ -68,10 +89,12 @@ export const HomeScreen = (): JSX.Element => {
       <h1 className="text-5xl font-extrabold tracking-tight text-white sm:text-[5rem]">
         Chat <span className="text-[hsl(280,100%,70%)]">With</span> GPT3
       </h1>
-      {shouldDisplayOveruseModal() && (
+
+      {!micPermissionState ? (
+        <CompatibilityModal />
+      ) : shouldDisplayOveruseModal() ? (
         <OveruseModal usageAmount={apiUsage.data?.totalBillable || 0} />
-      )}
-      {!shouldDisplayOveruseModal() && (
+      ) : (
         <>
           <div
             id="full-w-div"
@@ -79,7 +102,7 @@ export const HomeScreen = (): JSX.Element => {
           >
             <div
               className="flex  flex-col gap-4 rounded-xl bg-white/10 p-4
-      text-white hover:bg-white/20"
+    text-white hover:bg-white/20"
             >
               <h3 className="text-center text-2xl font-bold">
                 Start talking 💬
