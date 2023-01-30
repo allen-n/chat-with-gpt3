@@ -1,6 +1,8 @@
 import Image from "next/image";
 import { useState, useEffect } from "react";
 import { toast } from "react-hot-toast";
+import { posthog } from "posthog-js";
+
 /**
  * Component source: https://tailwindcomponents.com/component/testimonial-card
  * @returns JSX.Element
@@ -34,6 +36,7 @@ export const CompatibilityModal = (): JSX.Element => {
             );
           }
           if (err.name === "NotSupportedError") {
+            posthog.capture("Browser Not Supported Error Message");
             setModalText(
               "Sorry, it looks like you're using an unsupported browser (probably safari), which doesn't allow native audio recording. Please try again in a different browser or on a different device!"
             );
