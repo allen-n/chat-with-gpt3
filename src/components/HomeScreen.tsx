@@ -101,6 +101,13 @@ export const HomeScreen = (): JSX.Element => {
             id="full-w-div"
             className="flex w-full max-w-3xl flex-col gap-y-4"
           >
+            <div className="text-md w-full justify-self-center rounded-xl bg-white/10 p-3 text-center text-white">
+              {isLoggedIn(sessionStatus) ? (
+                <AudioInput />
+              ) : (
+                "Sorry, you need to sign in to use this 👆"
+              )}
+            </div>
             <DismissibleCard
               title={<>Start talking 💬</>}
               body={
@@ -153,13 +160,6 @@ export const HomeScreen = (): JSX.Element => {
               tooltip="Click to dismiss!"
               dismissible
             ></DismissibleCard>
-            <div className="text-md w-full justify-self-center rounded-xl bg-white/10 p-3 text-center text-white">
-              {isLoggedIn(sessionStatus) ? (
-                <AudioInput />
-              ) : (
-                "Sorry, you need to sign in to use this 👆"
-              )}
-            </div>
           </div>
         </>
       )}

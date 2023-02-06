@@ -26,14 +26,14 @@ export const SignIn: React.FC = () => {
   return (
     <div className="text-s z-50" ref={ref}>
       {shouldBeOpen ? (
-        <div className="grid w-20 gap-1 rounded-md bg-white/5 p-2 sm:w-40">
+        <div className="min-w-20 sm:min-w-40 grid gap-1 rounded-md bg-white/5 p-2">
           <p className="text-center  text-white">
             {sessionData && <span>Logged in as {sessionData.user?.name}</span>}
             {secretMessage && <span> - {secretMessage}</span>}
           </p>
           <ApiUsage />
           <button
-            className="rounded-md bg-white/10 p-1 font-semibold text-white no-underline transition hover:animate-bottom-bounce hover:bg-white/20"
+            className="rounded-md  bg-white/10 p-1 font-semibold text-white no-underline transition hover:animate-bottom-bounce hover:bg-white/20"
             onClick={
               sessionData
                 ? () => {
@@ -62,7 +62,7 @@ export const SignIn: React.FC = () => {
         </div>
       ) : (
         <button
-          className=" w-20 rounded-md bg-white/10 p-1 px-2 font-semibold text-white no-underline transition hover:animate-bottom-bounce hover:bg-white/20 sm:w-40"
+          className=" min-w-20 sm:min-w-40 rounded-md bg-white/10 p-1 px-2 font-semibold text-white no-underline transition hover:animate-bottom-bounce hover:bg-white/20"
           onClick={() => {
             setShouldBeOpen(true);
             posthog.capture("User Settings Opened");
