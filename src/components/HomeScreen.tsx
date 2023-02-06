@@ -132,7 +132,7 @@ export const HomeScreen = (): JSX.Element => {
                   <ul className="text-left">
                     <li>
                       👉 Context isn't stored between requests, so each thing
-                      you ask GPT3 will be a branch new conversation as far as
+                      you ask GPT3 will be a brand new conversation as far as
                       it's concerned.
                     </li>
                     <li>
@@ -152,7 +152,7 @@ export const HomeScreen = (): JSX.Element => {
                           me
                         </a>
                       </span>{" "}
-                      know! I might build it :){" "}
+                      know! I might build them :){" "}
                     </li>
                   </ul>
                 </>
