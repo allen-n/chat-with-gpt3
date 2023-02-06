@@ -15,7 +15,7 @@ export const AudioInput = (): JSX.Element => {
   const recordingTimeSlice = 2000;
   const audioBitRate = 16000;
   const loudnessThreshold = 0.05;
-  const maxSilentTicks = 8; // total number of ticks to wait for speech
+  const maxSilentTicks = 16; // total number of ticks to wait for speech
   const ticksWIthoutSpeechInterval = 200; // ms to wait between ticks checking for speech
 
   // Media state hooks
@@ -287,7 +287,6 @@ export const AudioInput = (): JSX.Element => {
           //     type: "audio/ogg; codecs=opus",
           //   });
           //   const b64string = await blobToBase64(blob);
-          //   const duration = await getBlobDuration(blob);
           //   userASRQuery.mutate({
           //     req: {
           //       returnType: "speechToText",
