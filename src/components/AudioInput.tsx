@@ -287,7 +287,6 @@ export const AudioInput = (): JSX.Element => {
           //     type: "audio/ogg; codecs=opus",
           //   });
           //   const b64string = await blobToBase64(blob);
-          //   const duration = await getBlobDuration(blob);
           //   userASRQuery.mutate({
           //     req: {
           //       returnType: "speechToText",

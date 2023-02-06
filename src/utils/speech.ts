@@ -155,6 +155,8 @@ export const generateText = async (
     enableSpokenPunctuation: { value: true },
     enableAutomaticPunctuation: true,
     maxAlternatives: 1, // We'll always grab the first alternative anyways
+    useEnhanced: true,
+    model: "phone_call",
   };
   audioBase64 = cleanBase64String(audioBase64);
   const request = {

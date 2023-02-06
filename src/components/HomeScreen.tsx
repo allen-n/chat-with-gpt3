@@ -4,6 +4,7 @@ import { AudioInput } from "../components/AudioInput";
 import { SignIn } from "./SignIn";
 import { OveruseModal } from "./OveruseModal";
 import { CompatibilityModal } from "./CompatibilityModal";
+import { DismissibleCard } from "./DismissibleCard";
 import { posthog } from "posthog-js";
 
 import { trpc } from "../utils/trpc";
@@ -100,18 +101,58 @@ export const HomeScreen = (): JSX.Element => {
             id="full-w-div"
             className="flex w-full max-w-3xl flex-col gap-y-4"
           >
-            <div
-              className="flex  flex-col gap-4 rounded-xl bg-white/10 p-4
-    text-white hover:bg-white/20"
-            >
-              <h3 className="text-center text-2xl font-bold">
-                Start talking 💬
-              </h3>
-              <div className="text-center text-lg">
-                Press record ( 🎤 ) to start talking, stop talking for 2
-                seconds, and let the machine do the rest.
-              </div>
-            </div>
+            <DismissibleCard
+              title={<>Start talking 💬</>}
+              body={
+                <>
+                  Press record ( 🎤 ) to start talking, stop talking for 2
+                  seconds, and let the machine do the rest.
+                </>
+              }
+              dismissible
+              tooltip="Click to dismiss!"
+            ></DismissibleCard>
+
+            <DismissibleCard
+              title={
+                <>
+                  ✋ Some Limitations (this <em>is</em> a proof of concept,
+                  after all...)
+                </>
+              }
+              body={
+                <>
+                  <ul className="text-left">
+                    <li>
+                      👉 Context isn't stored between requests, so each thing
+                      you ask GPT3 will be a branch new conversation as far as
+                      it's concerned.
+                    </li>
+                    <li>
+                      👉 This thing doesn't work on Safari or iOS because they
+                      don't support modern audio recording in web browsers (sad,
+                      I know)
+                    </li>
+                    <li>
+                      👉 Probably a bunch of other stuff, if you like this and
+                      want more features, let{" "}
+                      <span className="text-indigo-500 underline">
+                        <a
+                          href="https://twitter.com/nikka_allen"
+                          target="_blank"
+                          rel="noopener"
+                        >
+                          me
+                        </a>
+                      </span>{" "}
+                      know! I might build it :){" "}
+                    </li>
+                  </ul>
+                </>
+              }
+              tooltip="Click to dismiss!"
+              dismissible
+            ></DismissibleCard>
             <div className="text-md w-full justify-self-center rounded-xl bg-white/10 p-3 text-center text-white">
               {isLoggedIn(sessionStatus) ? (
                 <AudioInput />
